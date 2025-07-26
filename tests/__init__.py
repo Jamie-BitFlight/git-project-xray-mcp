@@ -1,1 +1,1 @@
-"""Tests for XRAY-Lite."""
+"""Tests for XRAY."""

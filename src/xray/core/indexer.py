@@ -1,4 +1,4 @@
-"""Core indexing engine for XRAY-Lite."""
+"""Core indexing engine for XRAY."""
 
 import time
 from pathlib import Path
@@ -38,7 +38,7 @@ class IndexingResult:
 
 
 class XRayIndexer:
-    """Core indexing engine for XRAY-Lite."""
+    """Core indexing engine for XRAY."""
     
     def __init__(self, repo_path: str = "."):
         """Initialize the indexer.
@@ -52,7 +52,7 @@ class XRayIndexer:
         self.errors: List[str] = []
         
         # Initialize database (safe to call multiple times)
-        self.db.initialize_database()
+        self.db.initialize_database_if_needed()
         
         # Load and register languages
         self._setup_languages()

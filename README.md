@@ -35,7 +35,7 @@ XRAY-Lite provides:
 ### One-Line Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/your-username/xray-lite/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/your-username/xray/main/install.sh | bash
 ```
 
 ### Generate Config

@@ -1,2 +1,6 @@
-# XRAY-Lite code intelligence database
+# XRAY code intelligence database
 .xray/
+
+# Python generated files
+__pycache__/
+*.egg-info/

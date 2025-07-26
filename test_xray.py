@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Simple test script to verify XRAY-Lite functionality."""
+"""Simple test script to verify XRAY functionality."""
 
 import sys
 import os
@@ -176,7 +176,7 @@ def cleanup():
 
 def main():
     """Run all tests."""
-    print("XRAY-Lite Test Suite")
+    print("XRAY Test Suite")
     print("===================")
     
     try:
@@ -206,7 +206,7 @@ def main():
         print(f"\nResults: {passed}/{len(tests)} tests passed")
         
         if passed == len(tests):
-            print("🎉 All tests passed! XRAY-Lite is working correctly.")
+            print("🎉 All tests passed! XRAY is working correctly.")
         else:
             print("⚠️  Some tests failed. Check the output above.")
     

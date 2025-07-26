@@ -1,4 +1,4 @@
-"""Base parser interface and language detection for XRAY-Lite."""
+"""Base parser interface and language detection for XRAY."""
 
 import os
 from abc import ABC, abstractmethod

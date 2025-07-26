@@ -1,2 +1,0 @@
-[console_scripts]
-xray-mcp = xray.mcp_server:main

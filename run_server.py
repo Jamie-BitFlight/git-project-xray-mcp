@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Simple runner for XRAY-Lite MCP server."""
+"""Simple runner for XRAY MCP server."""
 
 import sys
 from pathlib import Path
@@ -7,10 +7,19 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from xray.mcp_server import mcp
+from xray.mcp_server import mcp, get_indexer
 
 if __name__ == "__main__":
-    print("Starting XRAY-Lite MCP Server...")
+    print("Initializing XRAY database...")
+    try:
+        indexer = get_indexer()
+        indexer.db.initialize_database_if_needed()
+        print("Database initialization complete.")
+    except Exception as e:
+        print(f"Error during startup initialization: {e}")
+        sys.exit(1)
+
+    print("Starting XRAY MCP Server...")
     print("Available tools:")
     print("  - build_index(path): Rebuild code intelligence database")
     print("  - find_symbol(query, limit): Search symbols by name")

@@ -1,4 +1,4 @@
-"""Python parser using Tree-sitter for XRAY-Lite."""
+"""Python parser using Tree-sitter for XRAY."""
 
 import tree_sitter
 from typing import List, Set

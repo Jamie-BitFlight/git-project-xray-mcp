@@ -1,4 +1,4 @@
-"""SQLite database schema and initialization for XRAY-Lite."""
+"""SQLite database schema and initialization for XRAY."""
 
 import sqlite3
 import os
@@ -7,7 +7,7 @@ from typing import Optional
 
 
 class DatabaseManager:
-    """Manages the SQLite database for XRAY-Lite code intelligence."""
+    """Manages the SQLite database for XRAY code intelligence."""
     
     def __init__(self, repo_path: str = "."):
         """Initialize database manager.
@@ -29,9 +29,9 @@ class DatabaseManager:
             gitignore_content = gitignore_path.read_text()
             if ".xray/" not in gitignore_content:
                 with gitignore_path.open("a") as f:
-                    f.write("\n# XRAY-Lite code intelligence database\n.xray/\n")
+                    f.write("\n# XRAY code intelligence database\n.xray/\n")
         else:
-            gitignore_path.write_text("# XRAY-Lite code intelligence database\n.xray/\n")
+            gitignore_path.write_text("# XRAY code intelligence database\n.xray/\n")
     
     def get_connection(self) -> sqlite3.Connection:
         """Get database connection with proper configuration."""
@@ -44,6 +44,23 @@ class DatabaseManager:
         
         return conn
     
+    def initialize_database_if_needed(self) -> None:
+        """Initialize database only if it doesn't exist or is empty."""
+        self.ensure_xray_directory()
+        
+        # Check if the database file exists and has the symbols table
+        if self.db_path.exists():
+            try:
+                with self.get_connection() as conn:
+                    # If this query succeeds, the table exists.
+                    conn.execute("SELECT 1 FROM symbols LIMIT 1")
+                return  # Database already initialized
+            except sqlite3.OperationalError:
+                # Table doesn't exist, so we proceed with initialization
+                pass
+
+        self.initialize_database()
+
     def initialize_database(self) -> None:
         """Initialize database with schema and indexes."""
         with self.get_connection() as conn:

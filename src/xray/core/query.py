@@ -1,4 +1,4 @@
-"""Query engine for XRAY-Lite symbol search."""
+"""Query engine for XRAY symbol search."""
 
 from typing import Dict, List, Optional
 from dataclasses import dataclass
@@ -39,7 +39,7 @@ class LocationQueryResult:
 
 
 class XRayQueryEngine:
-    """Query engine for fast symbol search in XRAY-Lite."""
+    """Query engine for fast symbol search in XRAY."""
     
     def __init__(self, repo_path: str = "."):
         """Initialize the query engine.

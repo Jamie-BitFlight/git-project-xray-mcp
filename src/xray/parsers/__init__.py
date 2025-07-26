@@ -1,1 +1,1 @@
-"""XRAY-Lite parsers for different programming languages."""
+"""XRAY parsers for different programming languages."""

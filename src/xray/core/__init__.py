@@ -1,1 +1,1 @@
-"""Core XRAY-Lite functionality."""
+"""Core XRAY functionality."""

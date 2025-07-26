@@ -1,4 +1,4 @@
-"""Impact analysis engine for XRAY-Lite - THE KILLER FEATURE."""
+"""Impact analysis engine for XRAY - THE KILLER FEATURE."""
 
 from collections import deque
 from typing import Dict, List, Optional, Set
@@ -85,7 +85,7 @@ class DependencyAnalysisResult:
 
 
 class XRayImpactAnalyzer:
-    """Core impact analysis engine for XRAY-Lite."""
+    """Core impact analysis engine for XRAY."""
     
     def __init__(self, repo_path: str = "."):
         """Initialize the impact analyzer.

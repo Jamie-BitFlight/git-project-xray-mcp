@@ -1,7 +1,7 @@
 [project]
-name = "xray-lite"
+name = "xray"
 version = "0.1.0"
-description = "XRAY-Lite: Fast code intelligence for AI assistants"
+description = "XRAY: Fast code intelligence for AI assistants"
 dependencies = [
     "fastmcp>=0.1.0",
     "tree-sitter>=0.20.0",

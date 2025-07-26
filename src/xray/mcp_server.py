@@ -1,4 +1,4 @@
-"""FastMCP server for XRAY-Lite code intelligence."""
+"""FastMCP server for XRAY code intelligence."""
 
 import os
 import sys
@@ -13,7 +13,7 @@ from .core.impact import XRayImpactAnalyzer
 
 
 # Initialize FastMCP server
-mcp = FastMCP("XRAY-Lite Code Intelligence")
+mcp = FastMCP("XRAY Code Intelligence")
 
 # Global components (initialized on first use)
 _indexer: Optional[XRayIndexer] = None
@@ -282,7 +282,7 @@ def get_info(file: str, line: int) -> dict:
 
 @mcp.tool
 def get_stats() -> dict:
-    """Get XRAY-Lite database and indexing statistics.
+    """Get XRAY database and indexing statistics.
     
     Returns comprehensive statistics about the current index including
     symbol counts, database size, supported languages, and performance metrics.

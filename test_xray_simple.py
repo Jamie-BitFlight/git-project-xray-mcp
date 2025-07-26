@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Simple test script for XRAY-Lite system.
+Simple test script for XRAY system.
 Tests symbol extraction, indexing, and queries end-to-end.
 """
 
@@ -16,7 +16,7 @@ from xray.core.impact import XRayImpactAnalyzer
 from xray.core.schema import DatabaseManager
 
 def test_xray_system():
-    """Test the complete XRAY-Lite system."""
+    """Test the complete XRAY system."""
     
     # Set up test directory
     test_dir = Path(__file__).parent
@@ -67,7 +67,7 @@ result = service.login('admin', 'password123')
     test_file.write_text(test_code)
     
     try:
-        print("🚀 Testing XRAY-Lite System")
+        print("🚀 Testing XRAY System")
         print("=" * 50)
         
         # 1. Test indexing
@@ -123,7 +123,7 @@ result = service.login('admin', 'password123')
         else:
             print("❌ No symbol found at location")
         
-        print("\n🎉 All tests passed! XRAY-Lite is working correctly.")
+        print("\n🎉 All tests passed! XRAY is working correctly.")
         print("\n📊 System Performance:")
         print(f"  - Index time: {result.duration_seconds * 1000:.0f}ms")
         print(f"  - Database size: {result.database_size_kb:.1f}KB")

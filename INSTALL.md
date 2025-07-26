@@ -19,7 +19,7 @@ Just add `use XRAY tools` to your prompt and get intelligent code analysis.
 
 ```bash
 # Pull and run XRAY-Lite
-docker run -d --name xray-lite -p 8000:8000 xray-lite
+docker run -d --name xray -p 8000:8000 xray
 
 # Add to your MCP config
 ```
@@ -28,7 +28,7 @@ docker run -d --name xray-lite -p 8000:8000 xray-lite
 
 ```bash
 # Install XRAY-Lite
-pip install xray-lite
+pip install xray
 
 # Run server
 xray-mcp
@@ -55,7 +55,7 @@ Go to: `Settings` → `Cursor Settings` → `MCP` → `Add new global MCP server
 ```json
 {
   "mcpServers": {
-    "xray-lite": {
+    "xray": {
       "command": "python",
       "args": ["-m", "xray.mcp_server"]
     }
@@ -68,9 +68,9 @@ Go to: `Settings` → `Cursor Settings` → `MCP` → `Add new global MCP server
 ```json
 {
   "mcpServers": {
-    "xray-lite": {
+    "xray": {
       "command": "docker",
-      "args": ["run", "--rm", "-i", "xray-lite"]
+      "args": ["run", "--rm", "-i", "xray"]
     }
   }
 }
@@ -81,10 +81,10 @@ Go to: `Settings` → `Cursor Settings` → `MCP` → `Add new global MCP server
 ```json
 {
   "mcpServers": {
-    "xray-lite": {
+    "xray": {
       "command": "python",
       "args": ["run_server.py"],
-      "cwd": "/path/to/xray-lite"
+      "cwd": "/path/to/xray"
     }
   }
 }
@@ -109,7 +109,7 @@ Add to your Claude Desktop config file:
 ```json
 {
   "mcpServers": {
-    "xray-lite": {
+    "xray": {
       "command": "python",
       "args": ["-m", "xray.mcp_server"]
     }
@@ -122,9 +122,9 @@ Add to your Claude Desktop config file:
 ```json
 {
   "mcpServers": {
-    "xray-lite": {
+    "xray": {
       "command": "docker",
-      "args": ["run", "--rm", "-i", "xray-lite"]
+      "args": ["run", "--rm", "-i", "xray"]
     }
   }
 }
@@ -146,7 +146,7 @@ Add to your Windsurf MCP config file. See [Windsurf MCP docs](https://docs.winds
 ```json
 {
   "mcpServers": {
-    "xray-lite": {
+    "xray": {
       "command": "python",
       "args": ["-m", "xray.mcp_server"]
     }
@@ -159,9 +159,9 @@ Add to your Windsurf MCP config file. See [Windsurf MCP docs](https://docs.winds
 ```json
 {
   "mcpServers": {
-    "xray-lite": {
+    "xray": {
       "command": "docker",
-      "args": ["run", "--rm", "-i", "xray-lite"]
+      "args": ["run", "--rm", "-i", "xray"]
     }
   }
 }
@@ -184,7 +184,7 @@ Add to your VS Code MCP config file. See [VS Code MCP docs](https://code.visuals
 {
   "mcp": {
     "servers": {
-      "xray-lite": {
+      "xray": {
         "type": "stdio",
         "command": "python",
         "args": ["-m", "xray.mcp_server"]
@@ -200,10 +200,10 @@ Add to your VS Code MCP config file. See [VS Code MCP docs](https://code.visuals
 {
   "mcp": {
     "servers": {
-      "xray-lite": {
+      "xray": {
         "type": "stdio", 
         "command": "docker",
-        "args": ["run", "--rm", "-i", "xray-lite"]
+        "args": ["run", "--rm", "-i", "xray"]
       }
     }
   }
@@ -220,8 +220,8 @@ Add to your VS Code MCP config file. See [VS Code MCP docs](https://code.visuals
 
 ```bash
 # Clone repository
-git clone https://github.com/your-username/xray-lite.git
-cd xray-lite
+git clone https://github.com/your-username/xray.git
+cd xray
 
 # Install dependencies
 pip install -e .
@@ -234,12 +234,12 @@ python src/xray/mcp_server.py
 
 ```bash
 # Clone and build
-git clone https://github.com/your-username/xray-lite.git
-cd xray-lite
-docker build -t xray-lite .
+git clone https://github.com/your-username/xray.git
+cd xray
+docker build -t xray .
 
 # Run
-docker run --rm -i xray-lite
+docker run --rm -i xray
 ```
 
 ---

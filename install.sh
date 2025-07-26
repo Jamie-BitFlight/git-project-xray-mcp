@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# XRAY-Lite MCP Server Installation Script
-# Usage: curl -fsSL https://raw.githubusercontent.com/your-username/xray-lite/main/install.sh | bash
+# XRAY MCP Server Installation Script
+# Usage: curl -fsSL https://raw.githubusercontent.com/your-username/xray/main/install.sh | bash
 
 set -e
 
-echo "🚀 Installing XRAY-Lite MCP Server..."
+echo "🚀 Installing XRAY MCP Server..."
 
 # Check if Python 3.11+ is available
 if command -v python3 &> /dev/null; then
@@ -18,13 +18,13 @@ else
 fi
 
 # Create installation directory
-INSTALL_DIR="$HOME/.xray-lite"
+INSTALL_DIR="$HOME/.xray"
 mkdir -p "$INSTALL_DIR"
 
-# Download XRAY-Lite
-echo "📥 Downloading XRAY-Lite..."
+# Download XRAY
+echo "📥 Downloading XRAY..."
 if command -v git &> /dev/null; then
-    git clone https://github.com/your-username/xray-lite.git "$INSTALL_DIR" 2>/dev/null || {
+    git clone https://github.com/your-username/xray.git "$INSTALL_DIR" 2>/dev/null || {
         cd "$INSTALL_DIR"
         git pull origin main
     }
@@ -44,8 +44,8 @@ pip install -e .
 echo "🔧 Creating wrapper script..."
 cat > "$HOME/.local/bin/xray-mcp" << 'EOF'
 #!/bin/bash
-source "$HOME/.xray-lite/xray-venv/bin/activate"
-cd "$HOME/.xray-lite"
+source "$HOME/.xray/xray-venv/bin/activate"
+cd "$HOME/.xray"
 PYTHONPATH=src python src/xray/mcp_server.py "$@"
 EOF
 
@@ -58,14 +58,14 @@ if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
     export PATH="$HOME/.local/bin:$PATH"
 fi
 
-echo "✅ XRAY-Lite installed successfully!"
+echo "✅ XRAY installed successfully!"
 echo ""
 echo "🎯 Quick Start:"
 echo "1. Add this to your MCP config:"
-echo '   {"mcpServers": {"xray-lite": {"command": "xray-mcp"}}}'
+echo '   {"mcpServers": {"xray": {"command": "xray-mcp"}}}'
 echo ""
 echo "2. Use in prompts:"
 echo '   "Analyze this codebase for dependencies. use XRAY tools"'
 echo ""
 echo "📚 Full documentation:"
-echo "   https://github.com/your-username/xray-lite/blob/main/INSTALL.md"
+echo "   https://github.com/your-username/xray/blob/main/INSTALL.md"

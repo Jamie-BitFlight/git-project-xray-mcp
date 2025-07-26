@@ -1,4 +1,4 @@
-XRAY-Lite: LLM-Optimized Dependency Tracking System                                                         │ │
+XRAY: LLM-Optimized Dependency Tracking System                                                         │ │
 │ │                                                                                                             │ │
 │ │ Vision: Complete Code Intelligence for LLM Software Engineers                                               │ │
 │ │                                                                                                             │ │
@@ -67,5 +67,5 @@ XRAY-Lite: LLM-Optimized Dependency Tracking System                             
 │ │ indexer.py usage✅ what_breaks('__init__') shows all constructor call sites✅ LLMs can safely refactor        │ │
 │ │ knowing complete impact scope                                                                               │ │
 │ │                                                                                                             │ │
-│ │ This transforms XRAY-Lite from a "mostly works" tool into a production-ready code intelligence system that  │ │
+│ │ This transforms XRAY from a "mostly works" tool into a production-ready code intelligence system that  │ │
 │ │ LLMs can trust for safe code modifications.

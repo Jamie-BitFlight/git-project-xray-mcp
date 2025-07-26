@@ -204,11 +204,11 @@ def analyze_impact(symbol_id: int, max_depth: int = 10) -> List[Dict]:
 ### Phase 1: Foundation & Setup (Week 1)
 
 #### 1.1 Project Structure Setup
-- [ ] Create new repo: `xray-lite`
+- [ ] Create new repo: `xray`
 - [ ] Initialize Python project with `pyproject.toml`:
   ```toml
   [project]
-  name = "xray-lite"
+  name = "xray"
   version = "0.1.0"
   dependencies = [
       "fastmcp",
@@ -219,7 +219,7 @@ def analyze_impact(symbol_id: int, max_depth: int = 10) -> List[Dict]:
   ```
 - [ ] Create directory structure:
   ```
-  xray-lite/
+  xray/
   ├── README.md
   ├── pyproject.toml
   ├── xray_mcp_server.py      # Main MCP server entry point

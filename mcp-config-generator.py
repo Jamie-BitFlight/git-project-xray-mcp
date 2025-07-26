@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-XRAY-Lite MCP Configuration Generator
+XRAY MCP Configuration Generator
 Generates MCP config for different tools and installation methods.
 """
 
@@ -13,7 +13,7 @@ CONFIGS = {
     "cursor": {
         "local_python": {
             "mcpServers": {
-                "xray-lite": {
+                "xray": {
                     "command": "python",
                     "args": ["-m", "xray.mcp_server"]
                 }
@@ -21,15 +21,15 @@ CONFIGS = {
         },
         "docker": {
             "mcpServers": {
-                "xray-lite": {
+                "xray": {
                     "command": "docker", 
-                    "args": ["run", "--rm", "-i", "xray-lite"]
+                    "args": ["run", "--rm", "-i", "xray"]
                 }
             }
         },
         "source": {
             "mcpServers": {
-                "xray-lite": {
+                "xray": {
                     "command": "python",
                     "args": ["run_server.py"],
                     "cwd": str(Path.cwd())
@@ -40,7 +40,7 @@ CONFIGS = {
     "claude": {
         "local_python": {
             "mcpServers": {
-                "xray-lite": {
+                "xray": {
                     "command": "python",
                     "args": ["-m", "xray.mcp_server"]
                 }
@@ -48,9 +48,9 @@ CONFIGS = {
         },
         "docker": {
             "mcpServers": {
-                "xray-lite": {
+                "xray": {
                     "command": "docker",
-                    "args": ["run", "--rm", "-i", "xray-lite"]
+                    "args": ["run", "--rm", "-i", "xray"]
                 }
             }
         }
@@ -59,7 +59,7 @@ CONFIGS = {
         "local_python": {
             "mcp": {
                 "servers": {
-                    "xray-lite": {
+                    "xray": {
                         "type": "stdio",
                         "command": "python",
                         "args": ["-m", "xray.mcp_server"]
@@ -70,10 +70,10 @@ CONFIGS = {
         "docker": {
             "mcp": {
                 "servers": {
-                    "xray-lite": {
+                    "xray": {
                         "type": "stdio",
                         "command": "docker", 
-                        "args": ["run", "--rm", "-i", "xray-lite"]
+                        "args": ["run", "--rm", "-i", "xray"]
                     }
                 }
             }
@@ -113,7 +113,7 @@ def print_config(tool, method):
 
 def main():
     if len(sys.argv) != 3:
-        print("XRAY-Lite MCP Configuration Generator")
+        print("XRAY MCP Configuration Generator")
         print()
         print("Usage: python mcp-config-generator.py <tool> <method>")
         print()
