@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # XRAY MCP Server Installation Script
-# Usage: curl -fsSL https://raw.githubusercontent.com/your-username/xray/main/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/srijanshukla18/xray/main/install.sh | bash
 
 set -e
 
@@ -24,7 +24,7 @@ mkdir -p "$INSTALL_DIR"
 # Download XRAY
 echo "📥 Downloading XRAY..."
 if command -v git &> /dev/null; then
-    git clone https://github.com/your-username/xray.git "$INSTALL_DIR" 2>/dev/null || {
+    git clone https://github.com/srijanshukla18/xray.git "$INSTALL_DIR" 2>/dev/null || {
         cd "$INSTALL_DIR"
         git pull origin main
     }
@@ -68,4 +68,4 @@ echo "2. Use in prompts:"
 echo '   "Analyze this codebase for dependencies. use XRAY tools"'
 echo ""
 echo "📚 Full documentation:"
-echo "   https://github.com/your-username/xray/blob/main/INSTALL.md"
+echo "   https://github.com/srijanshukla18/xray/blob/main/INSTALL.md"

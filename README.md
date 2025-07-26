@@ -1,8 +1,8 @@
-# XRAY-Lite MCP - Fast Code Intelligence for AI Assistants
+# XRAY MCP - Fast Code Intelligence for AI Assistants
 
 [![Docker](https://img.shields.io/badge/Docker-Available-blue)](https://hub.docker.com) [![Python](https://img.shields.io/badge/Python-3.11+-green)](https://python.org) [![MCP](https://img.shields.io/badge/MCP-Compatible-purple)](https://modelcontextprotocol.io)
 
-## ❌ Without XRAY-Lite
+## ❌ Without XRAY
 
 AI assistants struggle with codebase understanding. You get:
 
@@ -11,9 +11,9 @@ AI assistants struggle with codebase understanding. You get:
 - ❌ Generic refactoring advice without impact analysis
 - ❌ No understanding of symbol relationships
 
-## ✅ With XRAY-Lite
+## ✅ With XRAY
 
-XRAY-Lite gives AI assistants **actual code intelligence**. Add `use XRAY tools` to your prompt:
+XRAY gives AI assistants **actual code intelligence**. Add `use XRAY tools` to your prompt:
 
 ```txt
 Analyze the UserService class and show me what would break if I change the authenticate method. use XRAY tools
@@ -23,7 +23,7 @@ Analyze the UserService class and show me what would break if I change the authe
 Find all functions that call validate_user and show their dependencies. use XRAY tools
 ```
 
-XRAY-Lite provides:
+XRAY provides:
 
 - 🔍 **Fast Symbol Search** - Find functions, classes instantly  
 - 💥 **Impact Analysis** - "What breaks if I change this?" (THE KILLER FEATURE)
@@ -32,10 +32,12 @@ XRAY-Lite provides:
 
 ## 🚀 Quick Install (30 seconds)
 
+See [`getting_started.md`](getting_started.md) for detailed installation instructions.
+
 ### One-Line Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/your-username/xray/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/srijanshukla18/xray/main/install.sh | bash
 ```
 
 ### Generate Config
@@ -129,7 +131,7 @@ SQLite Database (.xray/xray.db)
 4. **Simple codebase** - ~1000 lines of focused code
 5. **Actually useful** - Answers the questions that matter
 
-The **impact analysis** tool alone makes this invaluable for understanding code changes. Combined with fast symbol search and dependency tracking, XRAY-Lite provides exactly what AI assistants need to navigate and understand codebases effectively.
+The **impact analysis** tool alone makes this invaluable for understanding code changes. Combined with fast symbol search and dependency tracking, XRAY provides exactly what AI assistants need to navigate and understand codebases effectively.
 
 ## Database Storage
 
@@ -137,7 +139,7 @@ The code intelligence database is stored in `.xray/xray.db` in your repository r
 
 ## Getting Started
 
-1. **Install**: `pip install -e .`
+1. **Install**: See [`getting_started.md`](getting_started.md)
 2. **Index a repo**: Call the `build_index(".")` MCP tool
 3. **Search symbols**: `find_symbol("UserService")`
 4. **Impact analysis**: `what_breaks("authenticate_user")`
