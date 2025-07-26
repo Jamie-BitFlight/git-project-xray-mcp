@@ -4,20 +4,9 @@ XRAY is a powerful code intelligence system that enhances AI assistants' underst
 
 ## 🚀 Quick Start (30 seconds)
 
-### Option 1: Docker (Recommended)
+### Option 1: Python (Recommended for Local Development)
 
-This is the easiest method as it bundles all dependencies into a single container.
-
-**Prerequisites:** You must have Docker installed and running.
-
-```bash
-# Pull and run XRAY
-docker run -d --name xray -p 8000:8000 -i xray
-```
-
-### Option 2: Python
-
-This method installs XRAY directly into your Python environment.
+This method installs XRAY directly into your Python environment and provides direct access to your local filesystem for analyzing codebases.
 
 **Prerequisites:**
 *   Python 3.11+
@@ -37,7 +26,7 @@ pip install -e .
 python run_server.py
 ```
 
-### Option 3: One-Line Install Script (Automated Python Installation)
+### Option 2: One-Line Install Script (Automated Python Installation)
 
 For a quick setup, an automated script is available. Use this if you are comfortable running shell scripts directly from the internet.
 
@@ -73,29 +62,6 @@ Go to: `Settings` → `Cursor Settings` → `MCP` → `Add new global MCP server
       }
     }
     ```
-*   **Docker Installation:**
-    ```json
-    {
-      "mcpServers": {
-        "xray": {
-          "command": "docker",
-          "args": ["run", "--rm", "-i", "xray"]
-        }
-      }
-    }
-    ```
-*   **Development Mode (from source):**
-    ```json
-    {
-      "mcpServers": {
-        "xray": {
-          "command": "python",
-          "args": ["run_server.py"],
-          "cwd": "/path/to/your/cloned/xray/directory"
-        }
-      }
-    }
-    ```
 
 ### Claude Desktop
 
@@ -108,17 +74,6 @@ Add to your Claude Desktop config file (e.g., `~/Library/Application Support/Cla
         "xray": {
           "command": "python",
           "args": ["-m", "xray.mcp_server"]
-        }
-      }
-    }
-    ```
-*   **Docker Installation:**
-    ```json
-    {
-      "mcpServers": {
-        "xray": {
-          "command": "docker",
-          "args": ["run", "--rm", "-i", "xray"]
         }
       }
     }
@@ -137,20 +92,6 @@ Add to your VS Code MCP config file.
             "type": "stdio",
             "command": "python",
             "args": ["-m", "xray.mcp_server"]
-          }
-        }
-      }
-    }
-    ```
-*   **Docker Installation:**
-    ```json
-    {
-      "mcp": {
-        "servers": {
-          "xray": {
-            "type": "stdio",
-            "command": "docker",
-            "args": ["run", "--rm", "-i", "xray"]
           }
         }
       }
@@ -178,6 +119,6 @@ Once installed and configured, use XRAY's code intelligence tools by adding `use
 ## 🆘 Troubleshooting
 
 *   **Python not found:** Make sure Python 3.11+ is installed and correctly added to your system's PATH.
-*   **Docker not running:** Make sure your Docker Desktop application is running.
+*   **Docker not running:** This option has been removed. Please use the Python installation method.
 *   **Permission denied:** You might need to run commands with `sudo` or check file/directory permissions.
 *   **Port conflicts:** XRAY uses standard input/output (stdio) by default, so port conflicts are generally not an issue unless you explicitly configure it to use a network port.
