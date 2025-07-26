@@ -98,6 +98,23 @@ Add to your VS Code MCP config file.
     }
     ```
 
+## 🎯 Specifying Target Repository
+
+XRAY tools accept a `path` parameter to specify which repository to analyze. By default, they analyze the current working directory.
+
+```bash
+# Examples when using XRAY tools:
+build_index(path="/path/to/your/project")
+find_symbol(query="UserService", path="/path/to/your/project")
+what_breaks(symbol_name="authenticate", path="/path/to/your/project")
+```
+
+If you don't specify a path, XRAY will analyze the current directory. When XRAY detects it's analyzing its own codebase, it will show a warning.
+
+## 📁 Database Storage
+
+XRAY stores its databases in your home directory at `~/.xray/databases/`. Each repository gets its own database based on a hash of its path, allowing multiple repositories to be analyzed simultaneously without conflicts.
+
 ## 🎯 Usage
 
 Once installed and configured, use XRAY's code intelligence tools by adding `use XRAY tools` to your prompts within your AI assistant.

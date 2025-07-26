@@ -226,6 +226,11 @@ class XRayIndexer:
             duration = time.time() - start_time
             db_stats = self.db.get_database_stats()
             
+            # Save index timestamp
+            self.db.set_metadata("index_timestamp", str(time.time()))
+            self.db.set_metadata("indexed_files", str(files_processed))
+            self.db.set_metadata("indexed_symbols", str(len(all_symbols)))
+            
             return IndexingResult(
                 success=True,
                 files_indexed=files_processed,

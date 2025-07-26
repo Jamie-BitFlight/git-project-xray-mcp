@@ -2,8 +2,11 @@
 
 import sqlite3
 import os
+import hashlib
+import time
+from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict
 
 
 class DatabaseManager:
@@ -13,25 +16,30 @@ class DatabaseManager:
         """Initialize database manager.
         
         Args:
-            repo_path: Path to the repository root (where .xray/ will be created)
+            repo_path: Path to the repository root
         """
         self.repo_path = Path(repo_path).resolve()
-        self.xray_dir = self.repo_path / ".xray"
+        
+        # Generate a unique hash for this repository path
+        path_hash = hashlib.sha256(str(self.repo_path).encode()).hexdigest()[:16]
+        
+        # Store databases in user's home directory
+        self.xray_home = Path.home() / ".xray"
+        self.xray_dir = self.xray_home / "databases" / path_hash
         self.db_path = self.xray_dir / "xray.db"
+        
+        # Store metadata about which path this database is for
+        self.metadata_path = self.xray_dir / "metadata.txt"
         
     def ensure_xray_directory(self) -> None:
         """Ensure .xray directory exists and is properly configured."""
-        self.xray_dir.mkdir(exist_ok=True)
+        self.xray_dir.mkdir(parents=True, exist_ok=True)
         
-        # Add .xray to .gitignore if it exists
-        gitignore_path = self.repo_path / ".gitignore"
-        if gitignore_path.exists():
-            gitignore_content = gitignore_path.read_text()
-            if ".xray/" not in gitignore_content:
-                with gitignore_path.open("a") as f:
-                    f.write("\n# XRAY code intelligence database\n.xray/\n")
-        else:
-            gitignore_path.write_text("# XRAY code intelligence database\n.xray/\n")
+        # Write metadata about which repository this database is for
+        if not self.metadata_path.exists():
+            with self.metadata_path.open("w") as f:
+                f.write(f"Repository: {self.repo_path}\n")
+                f.write(f"Created: {os.environ.get('TZ', 'UTC')}\n")
     
     def get_connection(self) -> sqlite3.Connection:
         """Get database connection with proper configuration."""
@@ -127,6 +135,15 @@ class DatabaseManager:
             conn.execute("CREATE INDEX IF NOT EXISTS idx_edges_to ON edges(to_id)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_edges_type ON edges(edge_type)")
             
+            # Create metadata table for tracking index state
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS index_metadata (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
             conn.commit()
     
     def clear_database(self) -> None:
@@ -135,6 +152,7 @@ class DatabaseManager:
             conn.execute("DELETE FROM edges")
             conn.execute("DELETE FROM symbol_aliases")
             conn.execute("DELETE FROM symbols")
+            conn.execute("DELETE FROM index_metadata")
             conn.commit()
     
     def get_database_stats(self) -> dict:
@@ -173,7 +191,7 @@ class DatabaseManager:
             inserted_ids = []
             for symbol in symbols:
                 cursor.execute("""
-                    INSERT INTO symbols (canonical_id, name, kind, file, line, column, end_line, signature, parent_id)
+                    INSERT OR IGNORE INTO symbols (canonical_id, name, kind, file, line, column, end_line, signature, parent_id)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     symbol["canonical_id"],
@@ -186,7 +204,14 @@ class DatabaseManager:
                     symbol.get("signature"),
                     symbol.get("parent_id")
                 ))
-                inserted_ids.append(cursor.lastrowid)
+                if cursor.rowcount > 0:
+                    inserted_ids.append(cursor.lastrowid)
+                else:
+                    # Symbol already exists, get its ID
+                    cursor.execute("SELECT id FROM symbols WHERE canonical_id = ?", (symbol["canonical_id"],))
+                    result = cursor.fetchone()
+                    if result:
+                        inserted_ids.append(result[0])
             
             conn.commit()
             return inserted_ids
@@ -393,3 +418,81 @@ class DatabaseManager:
             
             row = cursor.fetchone()
             return dict(row) if row else None
+    
+    def set_metadata(self, key: str, value: str) -> None:
+        """Set a metadata value."""
+        with self.get_connection() as conn:
+            conn.execute("""
+                INSERT OR REPLACE INTO index_metadata (key, value, updated_at)
+                VALUES (?, ?, ?)
+            """, (key, value, datetime.utcnow().isoformat()))
+            conn.commit()
+    
+    def get_metadata(self, key: str) -> Optional[str]:
+        """Get a metadata value."""
+        with self.get_connection() as conn:
+            cursor = conn.execute("SELECT value FROM index_metadata WHERE key = ?", (key,))
+            result = cursor.fetchone()
+            return result[0] if result else None
+    
+    def get_index_freshness(self) -> Dict[str, any]:
+        """Check index freshness by comparing with latest file modifications."""
+        index_timestamp_str = self.get_metadata("index_timestamp")
+        if not index_timestamp_str:
+            return {
+                "index_exists": False,
+                "index_age_seconds": None,
+                "latest_file_change": None,
+                "is_stale": True,
+                "message": "No index found - run build_index first"
+            }
+        
+        index_timestamp = float(index_timestamp_str)
+        current_time = time.time()
+        index_age = current_time - index_timestamp
+        
+        # Find the most recently modified file in the repository
+        latest_mtime = 0
+        latest_file = None
+        for root, _, files in os.walk(self.repo_path):
+            # Skip .git and other hidden directories
+            if '/.git' in root or '/__pycache__' in root or '/node_modules' in root:
+                continue
+            
+            for file in files:
+                # Only check source files
+                if file.endswith(('.py', '.js', '.ts', '.jsx', '.tsx', '.go')):
+                    filepath = os.path.join(root, file)
+                    try:
+                        mtime = os.path.getmtime(filepath)
+                        if mtime > latest_mtime:
+                            latest_mtime = mtime
+                            latest_file = filepath
+                    except OSError:
+                        continue
+        
+        # Check if any files were modified after the index
+        is_stale = latest_mtime > index_timestamp if latest_mtime > 0 else False
+        
+        return {
+            "index_exists": True,
+            "index_timestamp": index_timestamp,
+            "index_age_seconds": index_age,
+            "index_age_human": self._format_time_ago(index_age),
+            "latest_file_change": latest_mtime if latest_mtime > 0 else None,
+            "latest_file": latest_file,
+            "is_stale": is_stale,
+            "staleness_seconds": latest_mtime - index_timestamp if is_stale else 0,
+            "message": f"Index is {'STALE' if is_stale else 'FRESH'} - last indexed {self._format_time_ago(index_age)} ago"
+        }
+    
+    def _format_time_ago(self, seconds: float) -> str:
+        """Format seconds into human-readable time ago."""
+        if seconds < 60:
+            return f"{int(seconds)} seconds"
+        elif seconds < 3600:
+            return f"{int(seconds / 60)} minutes"
+        elif seconds < 86400:
+            return f"{int(seconds / 3600)} hours"
+        else:
+            return f"{int(seconds / 86400)} days"
