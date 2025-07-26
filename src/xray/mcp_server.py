@@ -20,6 +20,66 @@ mcp = FastMCP("XRAY Code Intelligence")
 _component_cache: Dict[str, Dict[str, any]] = {}
 
 
+def validate_params(valid_params: Dict[str, type], common_errors: Dict[str, str] = None):
+    """
+    Decorator to validate parameters and provide LLM-friendly error messages.
+    
+    Args:
+        valid_params: Dictionary of parameter names and their types
+        common_errors: Dictionary of common parameter mistakes and their corrections
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(**kwargs):
+            # Check for unexpected parameters
+            unexpected = set(kwargs.keys()) - set(valid_params.keys())
+            if unexpected:
+                param = list(unexpected)[0]
+                func_name = func.__name__
+                
+                # Check if this is a common error
+                if common_errors and param in common_errors:
+                    return {
+                        "error": f"Invalid parameter '{param}' for {func_name}",
+                        "correction": common_errors[param],
+                        "valid_parameters": list(valid_params.keys()),
+                        "example": f"{func_name}({', '.join(f'{k}=...' for k in list(valid_params.keys())[:2])})"
+                    }
+                
+                # Default error for unexpected parameters
+                return {
+                    "error": f"Parameter '{param}' is not supported by {func_name}",
+                    "valid_parameters": list(valid_params.keys()),
+                    "suggestion": f"Remove the '{param}' parameter and use only the valid parameters listed above",
+                    "example": f"{func_name}({', '.join(f'{k}=...' for k in list(valid_params.keys())[:2])})"
+                }
+            
+            # Check for missing required parameters
+            required = {k for k, v in valid_params.items() if not (hasattr(v, '__args__') and type(None) in v.__args__)}
+            missing = required - set(kwargs.keys())
+            if missing and 'path' not in missing:  # path has a default
+                param = list(missing)[0]
+                return {
+                    "error": f"Missing required parameter '{param}'",
+                    "required_parameters": list(required),
+                    "all_parameters": list(valid_params.keys()),
+                    "suggestion": f"Add the '{param}' parameter to your call"
+                }
+            
+            # All good, call the function
+            try:
+                return func(**kwargs)
+            except Exception as e:
+                return {
+                    "error": f"Tool execution failed: {type(e).__name__}",
+                    "details": str(e),
+                    "suggestion": "Check your input values and try again"
+                }
+        
+        return wrapper
+    return decorator
+
+
 def friendly_error_handler(func):
     """Decorator to provide friendly error messages for LLMs."""
     @wraps(func)
@@ -187,6 +247,16 @@ def get_current_directory() -> dict:
 
 
 @mcp.tool
+@validate_params(
+    valid_params={'path': str},
+    common_errors={
+        'directory': "Use 'path' instead of 'directory' for the parameter name.",
+        'folder': "Use 'path' instead of 'folder' for the parameter name.",
+        'repo': "Use 'path' instead of 'repo' for the parameter name.",
+        'project': "Use 'path' instead of 'project' for the parameter name.",
+        'force': "Force rebuild is always performed. No need for a 'force' parameter."
+    }
+)
 def build_index(path: str = ".") -> dict:
     """ALWAYS specify path='/your/project' - don't analyze xray itself!
     
@@ -204,6 +274,12 @@ def build_index(path: str = ".") -> dict:
     
     Args:
         path: Directory path to index (defaults to current directory)
+        
+    COMMON ERRORS:
+    1. "Path does not exist" → Ensure the path points to a valid directory.
+    2. "Path is not a directory" → The path must point to a directory, not a file.
+    3. Analyzing xray itself → Always specify path='/path/to/your/project' to analyze your code.
+    4. "No supported source files found" → Ensure the directory contains .py, .js, .ts, or .go files.
         
     Returns:
         Dictionary with:
@@ -248,6 +324,15 @@ def build_index(path: str = ".") -> dict:
 
 
 @mcp.tool
+@validate_params(
+    valid_params={'pattern': str, 'path': str},
+    common_errors={
+        'query': "Use 'pattern' instead of 'query' for the search term.",
+        'name': "Use 'pattern' instead of 'name' for the search term.",
+        'filename': "Use 'pattern' instead of 'filename' for the search term.",
+        'extension': "Use 'pattern' to search for extensions (e.g., pattern='.py')."
+    }
+)
 def find_files(pattern: str, path: str = ".") -> dict:
     """ALWAYS specify path='/your/project' - don't analyze xray itself!
     
@@ -266,6 +351,11 @@ def find_files(pattern: str, path: str = ".") -> dict:
     ✓ find_files(pattern="slo", path="/my/project") - Finds scx-slo.bpf.c
     ✓ find_files(pattern=".test.") - Finds all test files
     ✓ find_files(pattern="config") - Finds configuration files
+    
+    COMMON ERRORS:
+    1. "Unexpected keyword argument 'query'" → Use 'pattern' instead of 'query' for the search term.
+    2. Searching for symbols → This tool searches filenames only. Use find_symbol() for code symbols.
+    3. Complex patterns → This uses simple substring matching, not regex or glob patterns.
     
     Returns:
         Dictionary with:
@@ -325,6 +415,15 @@ def find_files(pattern: str, path: str = ".") -> dict:
 
 
 @mcp.tool
+@validate_params(
+    valid_params={'query': str, 'limit': int, 'path': str},
+    common_errors={
+        'file': "The 'file' parameter is not supported. Use 'query' to search for symbol names across the entire project.",
+        'symbol': "Use 'query' instead of 'symbol' for the search term.",
+        'name': "Use 'query' instead of 'name' for the search term.",
+        'pattern': "Use 'query' for the symbol name to search. For file name patterns, use find_files() instead."
+    }
+)
 def find_symbol(query: str, limit: int = 50, path: str = ".") -> dict:
     """ALWAYS specify path='/your/project' - don't analyze xray itself!
     
@@ -346,6 +445,11 @@ def find_symbol(query: str, limit: int = 50, path: str = ".") -> dict:
     ✓ find_symbol(query="process_") - Finds all symbols starting with process_
     
     IMPORTANT: Searches indexed symbols only. Check 'index_status.is_stale'.
+    
+    COMMON ERRORS:
+    1. "Unexpected keyword argument 'file'" → Remove 'file' parameter. This tool searches symbol names across the entire indexed project.
+    2. "No symbols found" for keywords → This tool only finds defined symbols (functions, classes, methods). Use find_files() for filename searches.
+    3. "Empty query provided" → The 'query' parameter must contain the symbol name to search for.
     
     Returns:
         Dictionary with:
@@ -393,7 +497,17 @@ def find_symbol(query: str, limit: int = 50, path: str = ".") -> dict:
         }
 
 
-@mcp.tool  
+@mcp.tool
+@validate_params(
+    valid_params={'symbol_name': str, 'max_depth': int, 'path': str},
+    common_errors={
+        'file': "The 'file' parameter is not supported. This tool analyzes symbols across the entire indexed project.",
+        'symbol': "Use 'symbol_name' instead of 'symbol' for the parameter name.",
+        'name': "Use 'symbol_name' instead of 'name' for the parameter name.",
+        'function': "Use 'symbol_name' for any symbol type (function, class, method).",
+        'query': "Use 'symbol_name' for the exact symbol to analyze. Use find_symbol() for searching."
+    }
+)
 def what_breaks(symbol_name: str, max_depth: int = 5, path: str = ".") -> dict:
     """ALWAYS specify path='/your/project' - don't analyze xray itself!
     
@@ -415,6 +529,12 @@ def what_breaks(symbol_name: str, max_depth: int = 5, path: str = ".") -> dict:
     ✓ what_breaks(symbol_name="validate_input")
     
     IMPORTANT: Uses indexed data. Check 'index_status.is_stale'.
+    
+    COMMON ERRORS:
+    1. "Unexpected keyword argument 'file'" → Remove 'file' parameter. This tool analyzes impact across the entire project.
+    2. "Symbol not found" → Ensure the symbol name is exact (case-sensitive) and exists in the indexed code.
+    3. "Empty symbol name provided" → The 'symbol_name' parameter is required and must be non-empty.
+    4. Using dotted paths like "module.function" → Use just the symbol name "function".
     
     Returns:
         Dictionary with:
@@ -464,6 +584,16 @@ def what_breaks(symbol_name: str, max_depth: int = 5, path: str = ".") -> dict:
 
 
 @mcp.tool
+@validate_params(
+    valid_params={'symbol_name': str, 'path': str},
+    common_errors={
+        'file': "The 'file' parameter is not supported. This tool analyzes symbols across the entire indexed project.",
+        'symbol': "Use 'symbol_name' instead of 'symbol' for the parameter name.",
+        'name': "Use 'symbol_name' instead of 'name' for the parameter name.",
+        'function': "Use 'symbol_name' for any symbol type (function, class, method).",
+        'query': "Use 'symbol_name' for the exact symbol to analyze. Use find_symbol() for searching."
+    }
+)
 def what_depends(symbol_name: str, path: str = ".") -> dict:
     """ALWAYS specify path='/your/project' - don't analyze xray itself!
     
@@ -485,6 +615,12 @@ def what_depends(symbol_name: str, path: str = ".") -> dict:
     
     NOTE: Shows what THIS symbol needs, not what needs IT.
     For reverse, use what_breaks().
+    
+    COMMON ERRORS:
+    1. "Unexpected keyword argument 'file'" → Remove 'file' parameter. This tool analyzes symbols across the entire project.
+    2. "Symbol not found" → Ensure the symbol name is exact (case-sensitive) and exists in the indexed code.
+    3. "Empty symbol name provided" → The 'symbol_name' parameter is required and must be non-empty.
+    4. Confusing with what_breaks() → This shows dependencies OF the symbol, not what depends ON it.
     
     Returns:
         Dictionary with:
@@ -529,6 +665,16 @@ def what_depends(symbol_name: str, path: str = ".") -> dict:
 
 
 @mcp.tool
+@validate_params(
+    valid_params={'file': str, 'line': int, 'path': str},
+    common_errors={
+        'file_path': "Use 'file' instead of 'file_path' for the parameter name.",
+        'filename': "Use 'file' instead of 'filename' for the parameter name.",
+        'line_number': "Use 'line' instead of 'line_number' for the parameter name.",
+        'lineno': "Use 'line' instead of 'lineno' for the parameter name.",
+        'column': "Column information is not needed. Use only 'file' and 'line' parameters."
+    }
+)
 def get_info(file: str, line: int, path: str = ".") -> dict:
     """ALWAYS specify path='/your/project' - don't analyze xray itself!
     
@@ -547,6 +693,12 @@ def get_info(file: str, line: int, path: str = ".") -> dict:
         file: File path relative to repository root (e.g., "src/main.py")
         line: Line number (1-based, e.g., 42)
         path: Repository path to analyze (defaults to current directory)
+        
+    COMMON ERRORS:
+    1. "Empty file path provided" → The 'file' parameter must be a non-empty path string.
+    2. "Line number must be >= 1" → Line numbers start at 1, not 0.
+    3. Using absolute paths → Use paths relative to the repository root (e.g., "src/main.py" not "/home/user/project/src/main.py").
+    4. "No symbol found at location" → Not every line has a symbol definition. Try nearby lines.
         
     Returns:
         Dictionary with:
@@ -600,6 +752,14 @@ def get_info(file: str, line: int, path: str = ".") -> dict:
 
 
 @mcp.tool
+@validate_params(
+    valid_params={'path': str},
+    common_errors={
+        'directory': "Use 'path' instead of 'directory' for the parameter name.",
+        'repo': "Use 'path' instead of 'repo' for the parameter name.",
+        'project': "Use 'path' instead of 'project' for the parameter name."
+    }
+)
 def get_stats(path: str = ".") -> dict:
     """ALWAYS specify path='/your/project' - don't analyze xray itself!
     
@@ -617,6 +777,10 @@ def get_stats(path: str = ".") -> dict:
     
     Args:
         path: Repository path to get stats for (defaults to current directory)
+    
+    COMMON ERRORS:
+    1. "No index available" → Run build_index() first to create the database.
+    2. Index is stale → Check 'index_status.is_stale' and rebuild if needed.
     
     Returns:
         Dictionary with:
