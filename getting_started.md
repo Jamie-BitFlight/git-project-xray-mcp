@@ -2,6 +2,14 @@
 
 XRAY is a powerful code intelligence system that enhances AI assistants' understanding of codebases. It provides fast symbol search, impact analysis, dependency tracking, and location-based queries.
 
+## Supported Languages
+
+XRAY currently supports:
+- **Python** - Functions, classes, methods, imports, function calls
+- **JavaScript** - Functions, classes, methods, imports, exports, arrow functions
+- **TypeScript** - All JavaScript features plus interfaces, type aliases, enums, namespaces
+- **Go** - Functions, structs, interfaces, methods, imports, type declarations
+
 ## 🚀 Quick Start (30 seconds)
 
 ### Option 1: Python (Recommended for Local Development)

@@ -53,10 +53,9 @@ python mcp-config-generator.py vscode source
 
 Currently supported:
 - **Python** - Functions, classes, methods, imports, function calls
-
-Planned:
-- **JavaScript/TypeScript** - Functions, classes, methods, imports, calls  
-- **Go** - Functions, structs, methods, imports, calls
+- **JavaScript** - Functions, classes, methods, imports, exports, arrow functions
+- **TypeScript** - All JavaScript features plus interfaces, type aliases, enums, namespaces
+- **Go** - Functions, structs, interfaces, methods, imports, type declarations
 
 ## Usage Examples
 
@@ -108,7 +107,10 @@ Core Engine (src/xray/core/)
     ↓
 Symbol Extraction (src/xray/parsers/)
     ├── base.py         # Parser interface & language detection
-    └── python.py       # Tree-sitter Python parser
+    ├── python.py       # Tree-sitter Python parser
+    ├── javascript.py   # Tree-sitter JavaScript parser
+    ├── typescript.py   # Tree-sitter TypeScript parser
+    └── go.py           # Tree-sitter Go parser
     ↓
 SQLite Database (.xray/xray.db)
     ├── symbols         # Functions, classes, methods

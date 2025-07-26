@@ -11,6 +11,9 @@ from ..parsers.base import (
     Symbol, Edge, CanonicalIdGenerator
 )
 from ..parsers.python import PythonParser
+from ..parsers.javascript import JavaScriptParser
+from ..parsers.typescript import TypeScriptParser
+from ..parsers.go import GoParser
 
 
 @dataclass
@@ -65,13 +68,17 @@ class XRayIndexer:
         if 'python' in languages:
             self.registry.register_language('python', languages['python'], PythonParser)
         
-        # TODO: Add JavaScript/TypeScript and Go parsers when implemented
-        # if 'javascript' in languages:
-        #     self.registry.register_language('javascript', languages['javascript'], JavaScriptParser)
-        # if 'typescript' in languages:
-        #     self.registry.register_language('typescript', languages['typescript'], TypeScriptParser)
-        # if 'go' in languages:
-        #     self.registry.register_language('go', languages['go'], GoParser)
+        # Register JavaScript parser
+        if 'javascript' in languages:
+            self.registry.register_language('javascript', languages['javascript'], JavaScriptParser)
+        
+        # Register TypeScript parser
+        if 'typescript' in languages:
+            self.registry.register_language('typescript', languages['typescript'], TypeScriptParser)
+        
+        # Register Go parser
+        if 'go' in languages:
+            self.registry.register_language('go', languages['go'], GoParser)
     
     def build_index(self, path: Optional[str] = None, force_rebuild: bool = True) -> IndexingResult:
         """Build the code intelligence index.

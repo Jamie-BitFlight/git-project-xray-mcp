@@ -4,6 +4,7 @@ import os
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional
+from functools import wraps
 
 from fastmcp import FastMCP
 
@@ -17,6 +18,55 @@ mcp = FastMCP("XRAY Code Intelligence")
 
 # Cache for components per repository path
 _component_cache: Dict[str, Dict[str, any]] = {}
+
+
+def friendly_error_handler(func):
+    """Decorator to provide friendly error messages for LLMs."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except TypeError as e:
+            # Handle unexpected keyword arguments
+            error_msg = str(e)
+            if "unexpected keyword argument" in error_msg:
+                # Extract the problematic parameter
+                import re
+                match = re.search(r"unexpected keyword argument '(\w+)'", error_msg)
+                if match:
+                    param = match.group(1)
+                    func_name = func.__name__
+                    
+                    # Provide specific guidance based on the function and parameter
+                    if param == "file" and func_name in ["what_depends", "what_breaks", "find_symbol"]:
+                        return {
+                            "error": f"Parameter '{param}' is not supported by {func_name}.",
+                            "suggestion": f"Remove the '{param}' parameter. This tool operates on symbol names across the entire indexed project.",
+                            "example": f"{func_name}('function_name') or {func_name}('ClassName')",
+                            "hint": "Symbol names are function names, class names, or method names - not file paths."
+                        }
+                    else:
+                        return {
+                            "error": f"Unexpected parameter '{param}' for {func_name}.",
+                            "suggestion": f"Check the tool documentation for valid parameters.",
+                            "valid_params": str(func.__annotations__.keys()) if hasattr(func, '__annotations__') else "See documentation"
+                        }
+            
+            # Generic type error
+            return {
+                "error": "Invalid parameters provided.",
+                "details": str(e),
+                "suggestion": "Check the tool documentation for correct parameter usage."
+            }
+        except Exception as e:
+            # Handle other errors with context
+            return {
+                "error": f"Tool execution failed: {type(e).__name__}",
+                "details": str(e),
+                "suggestion": "Check your input parameters and try again."
+            }
+    
+    return wrapper
 
 
 def normalize_path(path: str) -> str:
@@ -198,27 +248,111 @@ def build_index(path: str = ".") -> dict:
 
 
 @mcp.tool
+def find_files(pattern: str, path: str = ".") -> dict:
+    """ALWAYS specify path='/your/project' - don't analyze xray itself!
+    
+    Search for FILES by name pattern - complements find_symbol.
+    
+    ACCEPTS ONLY:
+    - pattern: Substring to search in filenames (e.g., "test", "slo", ".py")
+    - path: Repository path (default: ".")
+    
+    USE THIS WHEN:
+    - Looking for files with specific keywords (e.g., "slo", "config", "test")
+    - find_symbol returns nothing (keyword might be in filename only)
+    - Need to explore project structure
+    
+    EXAMPLES:
+    ✓ find_files(pattern="slo", path="/my/project") - Finds scx-slo.bpf.c
+    ✓ find_files(pattern=".test.") - Finds all test files
+    ✓ find_files(pattern="config") - Finds configuration files
+    
+    Returns:
+        Dictionary with:
+        - files: List of matching file paths
+        - total_matches: Number found
+        - grouped_by_dir: Files organized by directory
+    """
+    try:
+        # Normalize path once at entry point
+        path = normalize_path(path)
+        
+        # Get the indexer to access file list
+        indexer = get_indexer(path)
+        
+        # Search through indexed files
+        matching_files = []
+        pattern_lower = pattern.lower()
+        
+        # Walk the repository
+        for root, dirs, files in os.walk(path):
+            # Skip common non-source directories
+            dirs[:] = [d for d in dirs if d not in {'.git', '__pycache__', 'node_modules', '.xray'}]
+            
+            for file in files:
+                if pattern_lower in file.lower():
+                    file_path = os.path.relpath(os.path.join(root, file), path)
+                    matching_files.append(file_path)
+        
+        # Group by directory
+        grouped = {}
+        for file_path in sorted(matching_files):
+            dir_name = os.path.dirname(file_path) or "."
+            if dir_name not in grouped:
+                grouped[dir_name] = []
+            grouped[dir_name].append(os.path.basename(file_path))
+        
+        response = {
+            "pattern": pattern,
+            "total_matches": len(matching_files),
+            "files": matching_files[:100],  # Limit to prevent huge responses
+            "grouped_by_dir": grouped,
+            "message": f"Found {len(matching_files)} files matching '{pattern}'"
+        }
+        
+        if len(matching_files) > 100:
+            response["note"] = f"Showing first 100 of {len(matching_files)} matches"
+        
+        return add_self_analysis_warning(response, path)
+        
+    except Exception as e:
+        return {
+            "pattern": pattern,
+            "total_matches": 0,
+            "files": [],
+            "error": f"File search failed: {str(e)}"
+        }
+
+
+@mcp.tool
 def find_symbol(query: str, limit: int = 50, path: str = ".") -> dict:
     """ALWAYS specify path='/your/project' - don't analyze xray itself!
     
-    Search for symbols by name substring.
-    Performs fast symbol search with intelligent ranking:
-    - Exact matches first
-    - Prefix matches second
-    - Substring matches last
+    Search for SYMBOL NAMES (functions, classes, methods) by substring.
     
-    IMPORTANT: This searches the INDEXED database, not live code.
-    Check 'index_status' in response to see if index is STALE.
-    If stale, consider running build_index first.
+    ACCEPTS ONLY:
+    - query: Symbol name to search (e.g., "UserService", "validate", "main")
+    - limit: Max results (default: 50)
+    - path: Repository path (default: ".")
     
-    Args:
-        query: Symbol name or partial name to search for
-        limit: Maximum number of results to return (default: 50)
-        path: Repository path to search in (defaults to current directory)
-        
+    COMMON MISTAKES:
+    ❌ find_symbol(query="SLO") - Won't find if SLO only in comments/filenames
+    ❌ find_symbol(file="main.py") - NO 'file' parameter! Use symbol names only
+    ❌ find_symbol("keyword in comment") - Only finds defined symbols, not text
+    
+    CORRECT USAGE:
+    ✓ find_symbol(query="UserService", path="/my/project")
+    ✓ find_symbol(query="validate", limit=20)
+    ✓ find_symbol(query="process_") - Finds all symbols starting with process_
+    
+    IMPORTANT: Searches indexed symbols only. Check 'index_status.is_stale'.
+    
     Returns:
-        Dictionary with search results and metadata.
-        ALWAYS includes 'index_status' with freshness information.
+        Dictionary with:
+        - symbols: List of matching symbols with file, line, signature
+        - total_matches: Number found
+        - index_status: Freshness info (CHECK is_stale!)
+        - message: Human-readable summary
     """
     try:
         # Normalize path once at entry point
@@ -263,23 +397,32 @@ def find_symbol(query: str, limit: int = 50, path: str = ".") -> dict:
 def what_breaks(symbol_name: str, max_depth: int = 5, path: str = ".") -> dict:
     """ALWAYS specify path='/your/project' - don't analyze xray itself!
     
-    Find what depends on this symbol (THE KILLER FEATURE).
-    Performs breadth-first search to find all symbols that transitively
-    depend on the given symbol. This answers the critical question:
-    "What breaks if I change this function/class/method?"
+    Find what depends on this symbol - "What breaks if I change this?"
     
-    IMPORTANT: This analyzes the INDEXED database, not live code.
-    Check 'index_status' in response to see if index is STALE.
-    If stale, the impact analysis may be outdated - run build_index first.
+    ACCEPTS ONLY:
+    - symbol_name: Exact symbol name (e.g., "authenticate_user", "Database")
+    - max_depth: How deep to trace impacts (default: 5)
+    - path: Repository path (default: ".")
     
-    Args:
-        symbol_name: Name of the symbol to analyze
-        max_depth: Maximum depth for transitive analysis (default: 5)
-        path: Repository path to analyze (defaults to current directory)
-        
+    COMMON MISTAKES:
+    ❌ what_breaks(file="auth.py", symbol_name="login") - NO 'file' parameter!
+    ❌ what_breaks("auth.login") - Use just "login", not dotted paths
+    ❌ what_breaks(symbol="UserClass") - Parameter is 'symbol_name' not 'symbol'
+    
+    CORRECT USAGE:
+    ✓ what_breaks(symbol_name="authenticate_user", path="/my/project")
+    ✓ what_breaks(symbol_name="Database", max_depth=3)
+    ✓ what_breaks(symbol_name="validate_input")
+    
+    IMPORTANT: Uses indexed data. Check 'index_status.is_stale'.
+    
     Returns:
-        Dictionary with complete impact analysis.
-        ALWAYS includes 'index_status' with freshness information.
+        Dictionary with:
+        - impacts_summary: Overview of what depends on this
+        - direct_impacts: Immediate dependents
+        - transitive_impacts: All affected symbols by depth
+        - total_impacts: Count of everything affected
+        - index_status: Freshness info (CHECK is_stale!)
     """
     try:
         # Normalize path once at entry point
@@ -324,22 +467,31 @@ def what_breaks(symbol_name: str, max_depth: int = 5, path: str = ".") -> dict:
 def what_depends(symbol_name: str, path: str = ".") -> dict:
     """ALWAYS specify path='/your/project' - don't analyze xray itself!
     
-    Find what this symbol depends on.
-    Shows the direct dependencies of a symbol - what imports, function calls,
-    and other references this symbol uses. Helps understand the requirements
-    and coupling of a symbol.
+    Find what this symbol depends on - its imports and calls.
     
-    IMPORTANT: This analyzes the INDEXED database, not live code.
-    Check 'index_status' in response to see if index is STALE.
-    If stale, dependencies may have changed - run build_index first.
+    ACCEPTS ONLY:
+    - symbol_name: Exact symbol name (e.g., "process_data", "UserModel")
+    - path: Repository path (default: ".")
     
-    Args:
-        symbol_name: Name of the symbol to analyze
-        path: Repository path to analyze (defaults to current directory)
-        
+    COMMON MISTAKES:
+    ❌ what_depends(file="main.py", symbol_name="main") - NO 'file' parameter!
+    ❌ what_depends("utils.helper") - Use just "helper", not dotted paths
+    ❌ what_depends(function="validate") - Parameter is 'symbol_name'
+    
+    CORRECT USAGE:
+    ✓ what_depends(symbol_name="process_data", path="/my/project")
+    ✓ what_depends(symbol_name="UserModel")
+    ✓ what_depends(symbol_name="main")
+    
+    NOTE: Shows what THIS symbol needs, not what needs IT.
+    For reverse, use what_breaks().
+    
     Returns:
-        Dictionary with dependency information.
-        ALWAYS includes 'index_status' with freshness information.
+        Dictionary with:
+        - direct_dependencies: What this symbol imports/calls
+        - total_dependencies: Count
+        - dependency_types: Breakdown by import/call/etc
+        - index_status: Freshness info (CHECK is_stale!)
     """
     try:
         # Normalize path once at entry point
