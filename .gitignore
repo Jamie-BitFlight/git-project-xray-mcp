@@ -1,5 +1,6 @@
 # XRAY code intelligence database
 .xray/
+*.log
 
 # Python generated files
 __pycache__/

@@ -121,7 +121,8 @@ class XRayIndexer:
             files_processed = 0
             
             for file_path in source_files:
-                print(f"Indexing file: {file_path}")
+                print(f"Indexing file: {file_path}", file=sys.stderr)
+                print(f"Indexing file: {file_path}", file=sys.stderr)
                 try:
                     symbols, edges = self.registry.parse_file(file_path)
                     

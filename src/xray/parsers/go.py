@@ -104,12 +104,6 @@ class GoParser(LanguageParser):
                 )
             ) @var.def
             
-            (short_var_declaration
-                left: (identifier_list
-                    (identifier) @short.var.name
-                )
-            ) @short.var.def
-            
             (const_declaration
                 (const_spec
                     name: (identifier) @const.name
@@ -339,18 +333,7 @@ class GoParser(LanguageParser):
                     )
                     symbols.append(symbol)
             
-            # Short variable declarations
-            elif 'short.var.name' in captures:
-                for name_node in captures['short.var.name']:
-                    symbol = Symbol(
-                        name=name_node.text.decode('utf-8'),
-                        kind='variable',
-                        file=file_path,
-                        line=name_node.start_point[0] + 1,
-                        column=name_node.start_point[1],
-                        signature=f"{name_node.text.decode('utf-8')} :="
-                    )
-                    symbols.append(symbol)
+
             
             # Constants
             elif 'const.name' in captures:

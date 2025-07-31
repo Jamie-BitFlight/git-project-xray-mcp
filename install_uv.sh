@@ -58,30 +58,46 @@ else
     echo -e "${GREEN}✓${NC} uv is already installed"
 fi
 
-# Create installation directory
-INSTALL_DIR="$HOME/.xray"
+# Determine installation directory
+if git rev-parse --is-inside-work-tree &> /dev/null; then
+    INSTALL_DIR=$(pwd)
+    echo -e "${GREEN}✓${NC} Installing from current Git repository: $INSTALL_DIR"
+    SKIP_CLONE=true
+else
+    INSTALL_DIR="$HOME/.xray"
+    echo -e "${YELLOW}📦${NC} Installing to default directory: $INSTALL_DIR"
+    SKIP_CLONE=false
+fi
 mkdir -p "$INSTALL_DIR"
 
-# Clone or update XRAY
-echo -e "${YELLOW}📥${NC} Downloading XRAY..."
-if [ -d "$INSTALL_DIR/.git" ]; then
-    cd "$INSTALL_DIR"
-    echo -e "${YELLOW}🔄${NC} Updating existing installation..."
-    if ! git pull origin main; then
-        echo -e "${YELLOW}⚠${NC} Git pull failed. Performing clean installation..."
-        cd "$HOME"
+# Clone or update XRAY (only if not installing from current repo)
+if [ "$SKIP_CLONE" = false ]; then
+    echo -e "${YELLOW}📥${NC} Downloading XRAY..."
+    if [ -d "$INSTALL_DIR/.git" ]; then
+        cd "$INSTALL_DIR"
+        echo -e "${YELLOW}🔄${NC} Updating existing installation..."
+        if ! git pull origin main; then
+            echo -e "${YELLOW}⚠${NC} Git pull failed. Performing clean installation..."
+            cd "$HOME"
+            rm -rf "$INSTALL_DIR"
+            git clone https://github.com/srijanshukla18/xray.git "$INSTALL_DIR"
+            cd "$INSTALL_DIR"
+        fi
+    elif [ -d "$INSTALL_DIR" ]; then
+        echo -e "${YELLOW}⚠${NC} Directory exists but is not a git repository. Cleaning up..."
         rm -rf "$INSTALL_DIR"
         git clone https://github.com/srijanshukla18/xray.git "$INSTALL_DIR"
         cd "$INSTALL_DIR"
+    else
+        git clone https://github.com/srijanshukla18/xray.git "$INSTALL_DIR"
+        cd "$INSTALL_DIR"
     fi
-elif [ -d "$INSTALL_DIR" ]; then
-    echo -e "${YELLOW}⚠${NC} Directory exists but is not a git repository. Cleaning up..."
-    rm -rf "$INSTALL_DIR"
-    git clone https://github.com/srijanshukla18/xray.git "$INSTALL_DIR"
-    cd "$INSTALL_DIR"
 else
-    git clone https://github.com/srijanshukla18/xray.git "$INSTALL_DIR"
+    # If installing from current repo, just change to it for uv tool install
     cd "$INSTALL_DIR"
+    # Clean uv cache to ensure local changes are picked up
+    echo -e "${YELLOW}🧹${NC} Cleaning uv cache..."
+    uv clean
 fi
 
 # Install XRAY as a uv tool
@@ -99,7 +115,7 @@ fi
 # Run verification test
 echo -e "${YELLOW}🧪${NC} Running installation test..."
 cd "$INSTALL_DIR"
-if python test_installation.py; then
+if python3 test_installation.py; then
     echo -e "${GREEN}✓${NC} All tests passed!"
 else
     echo -e "${YELLOW}⚠${NC} Some tests failed, but installation completed"

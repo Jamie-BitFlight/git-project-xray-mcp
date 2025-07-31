@@ -240,7 +240,7 @@ class LanguageDetector:
         # Check each path component
         for part in path_obj.parts:
             if part in ignore_patterns:
-                print(f"Ignoring path: {path}")
+                print(f"Ignoring path: {path}", file=sys.stderr)
                 return True
         
         # Check if any parent directory should be ignored
@@ -265,7 +265,7 @@ class LanguageDetector:
         root = Path(root_path).resolve()
         
         for file_path in root.rglob('*'):
-            print(f"Found file: {file_path}")
+            print(f"Found file: {file_path}", file=sys.stderr)
             if not file_path.is_file():
                 continue
             

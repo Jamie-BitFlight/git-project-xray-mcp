@@ -247,16 +247,16 @@ def get_current_directory() -> dict:
 
 
 @mcp.tool
-@validate_params(
-    valid_params={'path': str},
-    common_errors={
-        'directory': "Use 'path' instead of 'directory' for the parameter name.",
-        'folder': "Use 'path' instead of 'folder' for the parameter name.",
-        'repo': "Use 'path' instead of 'repo' for the parameter name.",
-        'project': "Use 'path' instead of 'project' for the parameter name.",
-        'force': "Force rebuild is always performed. No need for a 'force' parameter."
-    }
-)
+# @validate_params(
+#     valid_params={'path': str},
+#     common_errors={
+#         'directory': "Use 'path' instead of 'directory' for the parameter name.",
+#         'folder': "Use 'path' instead of 'folder' for the parameter name.",
+#         'repo': "Use 'path' instead of 'repo' for the parameter name.",
+#         'project': "Use 'path' instead of 'project' for the parameter name.",
+#         'force': "Force rebuild is always performed. No need for a 'force' parameter."
+#     }
+# )
 def build_index(path: str = ".") -> dict:
     """ALWAYS specify path='/your/project' - don't analyze xray itself!
     
@@ -840,7 +840,14 @@ def get_stats(path: str = ".") -> dict:
 
 def main():
     """Main entry point for the MCP server."""
-    mcp.run()
+    if len(sys.argv) > 1 and sys.argv[1] == "build_index":
+        # Direct invocation for debugging build_index
+        path = sys.argv[3] if len(sys.argv) > 3 and sys.argv[2] == "--path" else "."
+        result = build_index(path=path)
+        print(json.dumps(result, indent=2))
+    else:
+        mcp.run()
+    print(f"MCP Server running from: {__file__}", file=sys.stderr)
 
 
 @mcp.tool

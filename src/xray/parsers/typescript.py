@@ -12,220 +12,24 @@ class TypeScriptParser(LanguageParser):
         """Initialize TypeScript parser."""
         super().__init__(language)
         
-        # TypeScript-specific queries (includes JavaScript features plus TypeScript additions)
-        self.function_query = tree_sitter.Query(self.language, """
-            (function_declaration 
-                name: (identifier) @function.name
-            ) @function.def
-            
-            (function_expression
-                name: (identifier) @function.name
-            ) @function.expr
-            
-            (arrow_function
-                parameter: (identifier) @arrow.param
-            ) @arrow.func
-            
-            (variable_declarator
-                name: (identifier) @var.name
-                value: (arrow_function) @var.arrow
-            ) @var.arrow_decl
-            
-            (variable_declarator
-                name: (identifier) @var.name
-                value: (function_expression) @var.func
-            ) @var.func_decl
-            
-            (method_signature
-                name: (property_identifier) @method.sig.name
-            ) @method.sig
+        # Simplified Tree-sitter queries for core TypeScript symbols
+        self.symbol_query = tree_sitter.Query(self.language, """
+            (function_declaration name: (identifier) @function.name) @function.def
+            (class_declaration name: (type_identifier) @class.name) @class.def
+            (interface_declaration name: (type_identifier) @interface.name) @interface.def
+            (type_alias_declaration name: (type_identifier) @type.name) @type.def
+            (enum_declaration name: (identifier) @enum.name) @enum.def
+            (variable_declarator name: (identifier) @var.name value: (arrow_function)) @arrow.def
+            (import_statement source: (string (string_fragment) @import.source))
+            (export_statement declaration: (function_declaration name: (identifier) @export.function))
+            (export_statement declaration: (class_declaration name: (type_identifier) @export.class))
+            (export_statement declaration: (interface_declaration name: (type_identifier) @export.interface))
         """)
         
-        self.class_query = tree_sitter.Query(self.language, """
-            (class_declaration 
-                name: (type_identifier) @class.name
-            ) @class.def
-            
-            (class_expression
-                name: (type_identifier) @class.name
-            ) @class.expr
-            
-            (abstract_class_declaration
-                name: (type_identifier) @abstract.class.name
-            ) @abstract.class
-        """)
-        
-        # Interface and type alias queries (TypeScript specific)
-        self.interface_query = tree_sitter.Query(self.language, """
-            (interface_declaration
-                name: (type_identifier) @interface.name
-            ) @interface.def
-            
-            (type_alias_declaration
-                name: (type_identifier) @type.alias.name
-            ) @type.alias
-            
-            (enum_declaration
-                name: (identifier) @enum.name
-            ) @enum.def
-        """)
-        
-        # Method definitions inside classes
-        self.method_query = tree_sitter.Query(self.language, """
-            (method_definition
-                name: (property_identifier) @method.name
-            ) @method.def
-            
-            (method_definition
-                name: (private_property_identifier) @method.name
-            ) @method.private
-            
-            (abstract_method_signature
-                name: (property_identifier) @abstract.method.name
-            ) @abstract.method
-        """)
-        
-        # Import/export queries (extended for TypeScript)
-        self.import_query = tree_sitter.Query(self.language, """
-            (import_statement
-                source: (string (string_fragment) @import.source)
-            ) @import.stmt
-            
-            (import_clause
-                (identifier) @import.default
-            ) @import.default_clause
-            
-            (import_clause
-                (named_imports
-                    (import_specifier
-                        name: (identifier) @import.name
-                    )
-                )
-            ) @import.named
-            
-            (namespace_import
-                (identifier) @import.namespace
-            ) @import.namespace_stmt
-            
-            (import_alias
-                name: (identifier) @import.alias
-            ) @import.alias_stmt
-            
-            (type_import
-                (identifier) @import.type
-            ) @import.type_stmt
-        """)
-        
-        self.export_query = tree_sitter.Query(self.language, """
-            (export_statement
-                declaration: (function_declaration
-                    name: (identifier) @export.function
-                )
-            ) @export.func_stmt
-            
-            (export_statement
-                declaration: (class_declaration
-                    name: (type_identifier) @export.class
-                )
-            ) @export.class_stmt
-            
-            (export_statement
-                declaration: (interface_declaration
-                    name: (type_identifier) @export.interface
-                )
-            ) @export.interface_stmt
-            
-            (export_statement
-                declaration: (type_alias_declaration
-                    name: (type_identifier) @export.type
-                )
-            ) @export.type_stmt
-            
-            (export_statement
-                declaration: (variable_declaration
-                    (variable_declarator
-                        name: (identifier) @export.var
-                    )
-                )
-            ) @export.var_stmt
-            
-            (export_default_declaration
-                declaration: (identifier) @export.default
-            ) @export.default_stmt
-            
-            (export_specifier
-                name: (identifier) @export.name
-            ) @export.spec
-        """)
-        
-        # Call expressions (includes generic type arguments)
+        # Simple call query for impact analysis
         self.call_query = tree_sitter.Query(self.language, """
-            (call_expression
-                function: (identifier) @call.name
-            ) @call.expr
-            
-            (call_expression
-                function: (member_expression
-                    object: (identifier) @call.object
-                    property: (property_identifier) @call.method
-                )
-            ) @call.method_expr
-            
-            (new_expression
-                constructor: (identifier) @new.class
-            ) @new.expr
-            
-            (new_expression
-                constructor: (member_expression
-                    object: (identifier) @new.namespace
-                    property: (property_identifier) @new.class_name
-                )
-            ) @new.namespace_expr
-        """)
-        
-        # Type references (TypeScript specific)
-        self.type_reference_query = tree_sitter.Query(self.language, """
-            (type_identifier) @type.ref
-            
-            (generic_type
-                name: (type_identifier) @generic.type
-            ) @generic.ref
-            
-            (type_annotation
-                (type_identifier) @type.annotation
-            ) @type.ann
-        """)
-        
-        # Member expression (property access)
-        self.member_query = tree_sitter.Query(self.language, """
-            (member_expression
-                object: (identifier) @member.object
-                property: (property_identifier) @member.property
-            ) @member.expr
-        """)
-        
-        # Variable assignments
-        self.assignment_query = tree_sitter.Query(self.language, """
-            (variable_declarator
-                name: (identifier) @assign.var
-                value: (call_expression
-                    function: (identifier) @assign.function
-                )
-            ) @assign.call
-            
-            (variable_declarator
-                name: (identifier) @assign.var
-                value: (new_expression
-                    constructor: (identifier) @assign.class
-                )
-            ) @assign.new
-            
-            (assignment_expression
-                left: (identifier) @assign.target
-                right: (call_expression
-                    function: (identifier) @assign.func
-                )
-            ) @assign.expr
+            (call_expression function: (identifier) @call.name)
+            (call_expression function: (member_expression property: (property_identifier) @call.method))
         """)
     
     def extract_symbols(self, source_code: bytes, file_path: str) -> List[Symbol]:
@@ -298,12 +102,32 @@ class TypeScriptParser(LanguageParser):
         for match in matches:
             captures = match[1]
             
-            # Regular classes
             if 'class.name' in captures:
                 name_node = captures['class.name'][0]
-                def_node = captures.get('class.def', captures.get('class.expr', [None]))[0]
+                def_node = captures['class.def'][0]
                 
                 if def_node:
+                    symbol = Symbol(
+                        name=name_node.text.decode('utf-8'),
+                        kind='class',
+                        file=file_path,
+                        line=name_node.start_point[0] + 1,
+                        column=name_node.start_point[1],
+                        end_line=def_node.end_point[0] + 1,
+                        signature=f"class {name_node.text.decode('utf-8')}"
+                    )
+                    symbols.append(symbol)
+                    class_symbols[name_node.text.decode('utf-8')] = len(symbols) - 1
+            elif 'class.expr' in captures:
+                def_node = captures['class.expr'][0]
+                name_node = None
+                # Find the type_identifier child of the class_expression
+                for child in def_node.children:
+                    if child.type == 'type_identifier':
+                        name_node = child
+                        break
+                
+                if name_node:
                     symbol = Symbol(
                         name=name_node.text.decode('utf-8'),
                         kind='class',
@@ -487,18 +311,7 @@ class TypeScriptParser(LanguageParser):
                     )
                     symbols.append(symbol)
             
-            # Type imports
-            if 'import.type' in captures:
-                name_node = captures['import.type'][0]
-                symbol = Symbol(
-                    name=name_node.text.decode('utf-8'),
-                    kind='import',
-                    file=file_path,
-                    line=name_node.start_point[0] + 1,
-                    column=name_node.start_point[1],
-                    signature=f"import type {{ {name_node.text.decode('utf-8')} }}"
-                )
-                symbols.append(symbol)
+
         
         return symbols
     

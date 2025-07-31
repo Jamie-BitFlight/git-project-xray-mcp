@@ -1,0 +1,4 @@
+
+
+
+const myClass = class MyClass {};
