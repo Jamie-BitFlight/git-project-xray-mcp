@@ -35,6 +35,13 @@ CONFIGS = {
                     "cwd": str(Path.cwd())
                 }
             }
+        },
+        "installed_script": {
+            "mcpServers": {
+                "xray": {
+                    "command": "xray-mcp"
+                }
+            }
         }
     },
     "claude": {
@@ -74,6 +81,16 @@ CONFIGS = {
                         "type": "stdio",
                         "command": "docker", 
                         "args": ["run", "--rm", "-i", "xray"]
+                    }
+                }
+            }
+        },
+        "installed_script": {
+            "mcp": {
+                "servers": {
+                    "xray": {
+                        "type": "stdio",
+                        "command": "xray-mcp"
                     }
                 }
             }

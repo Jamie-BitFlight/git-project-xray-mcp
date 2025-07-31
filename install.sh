@@ -33,12 +33,23 @@ else
     exit 1
 fi
 
-# Install dependencies
-echo "📦 Installing dependencies..."
+# Check for uv and install if not found
+if ! command -v uv &> /dev/null; then
+    echo "Installing uv (a fast Python package installer and resolver)..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    # Add uv to PATH for current session
+    export PATH="$HOME/.cargo/bin:$PATH"
+    echo "uv installed."
+else
+    echo "uv is already installed."
+fi
+
+# Install dependencies using uv
+echo "📦 Installing dependencies with uv..."
 cd "$INSTALL_DIR"
-python3 -m venv xray-venv
+uv venv xray-venv
 source xray-venv/bin/activate
-pip install -e .
+uv pip install -e .
 
 # Create wrapper script
 echo "🔧 Creating wrapper script..."
@@ -68,4 +79,4 @@ echo "2. Use in prompts:"
 echo '   "Analyze this codebase for dependencies. use XRAY tools"'
 echo ""
 echo "📚 Full documentation:"
-echo "   https://github.com/srijanshukla18/xray/blob/main/INSTALL.md"
+echo "   https://github.com/srijanshukla18/xray/blob/main/getting_started.md

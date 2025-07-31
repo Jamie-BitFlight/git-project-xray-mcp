@@ -4,3 +4,33 @@
 # Python generated files
 __pycache__/
 *.egg-info/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+xray-venv/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Distribution / packaging
+build/
+dist/
+*.egg
+MANIFEST
+
+# uv
+.python-version
+uv.lock

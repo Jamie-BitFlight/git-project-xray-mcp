@@ -34,7 +34,19 @@ XRAY provides:
 
 See [`getting_started.md`](getting_started.md) for detailed installation instructions.
 
-### One-Line Install
+### Modern Install with uv (Recommended)
+
+```bash
+# Install uv if you don't have it
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Clone and install XRAY
+git clone https://github.com/srijanshukla18/xray.git
+cd xray
+uv tool install .
+```
+
+### Traditional One-Line Install
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/srijanshukla18/xray/main/install.sh | bash

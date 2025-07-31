@@ -12,9 +12,21 @@ XRAY currently supports:
 
 ## 🚀 Quick Start (30 seconds)
 
-### Option 1: Python (Recommended for Local Development)
+> **Recommended:** For the modern installation experience using `uv` (10-100x faster than pip), see [GETTING_STARTED_UV.md](GETTING_STARTED_UV.md)
 
-This method installs XRAY directly into your Python environment and provides direct access to your local filesystem for analyzing codebases.
+### Option 1: Quick Start with `install.sh` (Recommended)
+
+For the fastest and easiest setup, use our automated installation script. This script handles cloning the repository, setting up a virtual environment, installing dependencies, and creating a convenient wrapper script to run the XRAY MCP server.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/srijanshukla18/xray/main/install.sh | bash
+```
+
+After running the script, you can start the XRAY MCP server by simply typing `xray-mcp` in your terminal.
+
+### Option 2: Manual Python Installation
+
+This method installs XRAY directly into your Python environment and provides direct access to your local filesystem for analyzing codebases. Use this option if you prefer more control over the installation process.
 
 **Prerequisites:**
 *   Python 3.11+
@@ -32,14 +44,6 @@ pip install -e .
 
 # Run server
 python run_server.py
-```
-
-### Option 2: One-Line Install Script (Automated Python Installation)
-
-For a quick setup, an automated script is available. Use this if you are comfortable running shell scripts directly from the internet.
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/srijanshukla18/xray/main/install.sh | bash
 ```
 
 ## 🔌 MCP Client Integration
@@ -71,6 +75,17 @@ Go to: `Settings` → `Cursor Settings` → `MCP` → `Add new global MCP server
     }
     ```
 
+*   **Installed Script (Recommended):**
+    ```json
+    {
+      "mcpServers": {
+        "xray": {
+          "command": "xray-mcp"
+        }
+      }
+    }
+    ```
+
 ### Claude Desktop
 
 Add to your Claude Desktop config file (e.g., `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS).
@@ -82,6 +97,17 @@ Add to your Claude Desktop config file (e.g., `~/Library/Application Support/Cla
         "xray": {
           "command": "python",
           "args": ["-m", "xray.mcp_server"]
+        }
+      }
+    }
+    ```
+
+*   **Installed Script (Recommended):**
+    ```json
+    {
+      "mcpServers": {
+        "xray": {
+          "command": "xray-mcp"
         }
       }
     }
@@ -100,6 +126,20 @@ Add to your VS Code MCP config file.
             "type": "stdio",
             "command": "python",
             "args": ["-m", "xray.mcp_server"]
+          }
+        }
+      }
+    }
+    ```
+
+*   **Installed Script (Recommended):**
+    ```json
+    {
+      "mcp": {
+        "servers": {
+          "xray": {
+            "type": "stdio",
+            "command": "xray-mcp"
           }
         }
       }
@@ -141,9 +181,44 @@ Once installed and configured, use XRAY's code intelligence tools by adding `use
 *   **`what_depends`**: Dependency analysis (shows what a symbol uses).
 *   **`get_info`**: Get the symbol at a specific file and line number.
 
+## 🧪 Verify Your Installation
+
+After installation, you can verify XRAY is working correctly:
+
+### Quick Test
+
+```bash
+# Run the installation test script
+python test_installation.py
+```
+
+This will check:
+- All required modules are installed
+- Language parsers are available  
+- Basic indexing functionality works
+- MCP server can be initialized
+
+### Manual Test
+
+1. Create a test file `example.py`:
+```python
+def calculate_total(items):
+    return sum(items)
+
+class ShoppingCart:
+    def add_item(self, item):
+        self.items.append(item)
+```
+
+2. In your AI assistant, test these commands:
+   - `Build the index for the current directory. use XRAY tools`
+   - `Find all functions in example.py. use XRAY tools`
+   - `What would break if I change add_item? use XRAY tools`
+
 ## 🆘 Troubleshooting
 
 *   **Python not found:** Make sure Python 3.11+ is installed and correctly added to your system's PATH.
 *   **Docker not running:** This option has been removed. Please use the Python installation method.
 *   **Permission denied:** You might need to run commands with `sudo` or check file/directory permissions.
 *   **Port conflicts:** XRAY uses standard input/output (stdio) by default, so port conflicts are generally not an issue unless you explicitly configure it to use a network port.
+*   **Import errors:** Run `python test_installation.py` to diagnose missing dependencies.

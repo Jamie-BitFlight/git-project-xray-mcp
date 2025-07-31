@@ -156,7 +156,7 @@ def check_self_analysis(path: str) -> bool:
         print("\n" + "="*80, file=sys.stderr)
         print("⚠️  WARNING: XRAY IS ANALYZING ITS OWN CODEBASE! ⚠️", file=sys.stderr)
         print("="*80, file=sys.stderr)
-        print("You are analyzing the xray-lite MCP implementation itself.", file=sys.stderr)
+        print("You are analyzing the xray MCP implementation itself.", file=sys.stderr)
         print("To analyze a different codebase, specify the path parameter:", file=sys.stderr)
         print('  Example: build_index(path="/path/to/your/project")', file=sys.stderr)
         print("="*80 + "\n", file=sys.stderr)
