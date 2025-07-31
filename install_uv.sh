@@ -66,7 +66,19 @@ mkdir -p "$INSTALL_DIR"
 echo -e "${YELLOW}📥${NC} Downloading XRAY..."
 if [ -d "$INSTALL_DIR/.git" ]; then
     cd "$INSTALL_DIR"
-    git pull origin main
+    echo -e "${YELLOW}🔄${NC} Updating existing installation..."
+    if ! git pull origin main; then
+        echo -e "${YELLOW}⚠${NC} Git pull failed. Performing clean installation..."
+        cd "$HOME"
+        rm -rf "$INSTALL_DIR"
+        git clone https://github.com/srijanshukla18/xray.git "$INSTALL_DIR"
+        cd "$INSTALL_DIR"
+    fi
+elif [ -d "$INSTALL_DIR" ]; then
+    echo -e "${YELLOW}⚠${NC} Directory exists but is not a git repository. Cleaning up..."
+    rm -rf "$INSTALL_DIR"
+    git clone https://github.com/srijanshukla18/xray.git "$INSTALL_DIR"
+    cd "$INSTALL_DIR"
 else
     git clone https://github.com/srijanshukla18/xray.git "$INSTALL_DIR"
     cd "$INSTALL_DIR"

@@ -840,8 +840,7 @@ def get_stats(path: str = ".") -> dict:
 
 def main():
     """Main entry point for the MCP server."""
-    if __name__ == "__main__":
-        mcp.run()
+    mcp.run()
 
 
 @mcp.tool
