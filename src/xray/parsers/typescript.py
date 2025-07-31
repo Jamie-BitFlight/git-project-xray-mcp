@@ -234,8 +234,7 @@ class TypeScriptParser(LanguageParser):
         symbols = []
         
         # Extract functions
-        query_cursor = tree_sitter.QueryCursor(self.function_query)
-        matches = query_cursor.matches(tree.root_node)
+        matches = self.function_query.matches(tree.root_node)
         for match in matches:
             captures = match[1]
             
@@ -295,8 +294,7 @@ class TypeScriptParser(LanguageParser):
         
         # Extract classes (including abstract classes)
         class_symbols = {}  # Track class symbols for method parent assignment
-        query_cursor = tree_sitter.QueryCursor(self.class_query)
-        matches = query_cursor.matches(tree.root_node)
+        matches = self.class_query.matches(tree.root_node)
         for match in matches:
             captures = match[1]
             
@@ -336,8 +334,7 @@ class TypeScriptParser(LanguageParser):
                 class_symbols[name_node.text.decode('utf-8')] = len(symbols) - 1
         
         # Extract interfaces, type aliases, and enums (TypeScript specific)
-        query_cursor = tree_sitter.QueryCursor(self.interface_query)
-        matches = query_cursor.matches(tree.root_node)
+        matches = self.interface_query.matches(tree.root_node)
         for match in matches:
             captures = match[1]
             
@@ -392,8 +389,7 @@ class TypeScriptParser(LanguageParser):
                 symbols.append(symbol)
         
         # Extract methods
-        query_cursor = tree_sitter.QueryCursor(self.method_query)
-        matches = query_cursor.matches(tree.root_node)
+        matches = self.method_query.matches(tree.root_node)
         for match in matches:
             captures = match[1]
             
@@ -443,8 +439,7 @@ class TypeScriptParser(LanguageParser):
                 symbols.append(symbol)
         
         # Extract imports
-        query_cursor = tree_sitter.QueryCursor(self.import_query)
-        matches = query_cursor.matches(tree.root_node)
+        matches = self.import_query.matches(tree.root_node)
         for match in matches:
             captures = match[1]
             
@@ -520,8 +515,7 @@ class TypeScriptParser(LanguageParser):
             return bool(name and name != "<module>")
         
         # Extract function calls
-        query_cursor = tree_sitter.QueryCursor(self.call_query)
-        matches = query_cursor.matches(tree.root_node)
+        matches = self.call_query.matches(tree.root_node)
         for match in matches:
             captures = match[1]
             caller = None
@@ -612,8 +606,7 @@ class TypeScriptParser(LanguageParser):
                 ))
         
         # Extract type references (TypeScript specific)
-        query_cursor = tree_sitter.QueryCursor(self.type_reference_query)
-        matches = query_cursor.matches(tree.root_node)
+        matches = self.type_reference_query.matches(tree.root_node)
         for match in matches:
             captures = match[1]
             
@@ -633,8 +626,7 @@ class TypeScriptParser(LanguageParser):
                         ))
         
         # Extract member access dependencies
-        query_cursor = tree_sitter.QueryCursor(self.member_query)
-        matches = query_cursor.matches(tree.root_node)
+        matches = self.member_query.matches(tree.root_node)
         for match in matches:
             captures = match[1]
             
@@ -663,8 +655,7 @@ class TypeScriptParser(LanguageParser):
                         ))
         
         # Extract assignment dependencies
-        query_cursor = tree_sitter.QueryCursor(self.assignment_query)
-        matches = query_cursor.matches(tree.root_node)
+        matches = self.assignment_query.matches(tree.root_node)
         for match in matches:
             captures = match[1]
             

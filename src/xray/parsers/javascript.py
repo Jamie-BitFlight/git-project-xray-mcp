@@ -167,8 +167,7 @@ class JavaScriptParser(LanguageParser):
         symbols = []
         
         # Extract functions
-        query_cursor = tree_sitter.QueryCursor(self.function_query)
-        matches = query_cursor.matches(tree.root_node)
+        matches = self.function_query.matches(tree.root_node)
         for match in matches:
             captures = match[1]
             
@@ -228,8 +227,7 @@ class JavaScriptParser(LanguageParser):
         
         # Extract classes
         class_symbols = {}  # Track class symbols for method parent assignment
-        query_cursor = tree_sitter.QueryCursor(self.class_query)
-        matches = query_cursor.matches(tree.root_node)
+        matches = self.class_query.matches(tree.root_node)
         for match in matches:
             captures = match[1]
             if 'class.name' in captures:
@@ -250,8 +248,7 @@ class JavaScriptParser(LanguageParser):
                     class_symbols[name_node.text.decode('utf-8')] = len(symbols) - 1
         
         # Extract methods
-        query_cursor = tree_sitter.QueryCursor(self.method_query)
-        matches = query_cursor.matches(tree.root_node)
+        matches = self.method_query.matches(tree.root_node)
         for match in matches:
             captures = match[1]
             if 'method.name' in captures:
@@ -278,8 +275,7 @@ class JavaScriptParser(LanguageParser):
                     symbols.append(symbol)
         
         # Extract imports
-        query_cursor = tree_sitter.QueryCursor(self.import_query)
-        matches = query_cursor.matches(tree.root_node)
+        matches = self.import_query.matches(tree.root_node)
         for match in matches:
             captures = match[1]
             
@@ -328,8 +324,7 @@ class JavaScriptParser(LanguageParser):
                     symbols.append(symbol)
         
         # Extract exports
-        query_cursor = tree_sitter.QueryCursor(self.export_query)
-        matches = query_cursor.matches(tree.root_node)
+        matches = self.export_query.matches(tree.root_node)
         for match in matches:
             captures = match[1]
             
@@ -367,8 +362,7 @@ class JavaScriptParser(LanguageParser):
             return bool(name and name != "<module>")
         
         # Extract function calls
-        query_cursor = tree_sitter.QueryCursor(self.call_query)
-        matches = query_cursor.matches(tree.root_node)
+        matches = self.call_query.matches(tree.root_node)
         for match in matches:
             captures = match[1]
             caller = None
@@ -433,8 +427,7 @@ class JavaScriptParser(LanguageParser):
                 ))
         
         # Extract member access dependencies
-        query_cursor = tree_sitter.QueryCursor(self.member_query)
-        matches = query_cursor.matches(tree.root_node)
+        matches = self.member_query.matches(tree.root_node)
         for match in matches:
             captures = match[1]
             
@@ -463,8 +456,7 @@ class JavaScriptParser(LanguageParser):
                         ))
         
         # Extract assignment dependencies
-        query_cursor = tree_sitter.QueryCursor(self.assignment_query)
-        matches = query_cursor.matches(tree.root_node)
+        matches = self.assignment_query.matches(tree.root_node)
         for match in matches:
             captures = match[1]
             

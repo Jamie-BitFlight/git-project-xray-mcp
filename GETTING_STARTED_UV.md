@@ -87,6 +87,20 @@ uvx xray
 
 After installation, configure your AI assistant to use XRAY:
 
+### Claude CLI (Claude Code)
+
+For Claude CLI users, simply run:
+
+```bash
+claude mcp add xray xray-mcp -s local
+```
+
+Then verify it's connected:
+
+```bash
+claude mcp list | grep xray
+```
+
 ### Claude Desktop
 
 Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
