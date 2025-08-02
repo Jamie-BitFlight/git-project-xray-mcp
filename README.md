@@ -1,6 +1,6 @@
-# XRAY MCP - Fast Code Intelligence for AI Assistants
+# XRAY MCP - Structural Code Intelligence for AI Assistants
 
-[![Docker](https://img.shields.io/badge/Docker-Available-blue)](https://hub.docker.com) [![Python](https://img.shields.io/badge/Python-3.11+-green)](https://python.org) [![MCP](https://img.shields.io/badge/MCP-Compatible-purple)](https://modelcontextprotocol.io)
+[![Python](https://img.shields.io/badge/Python-3.10+-green)](https://python.org) [![MCP](https://img.shields.io/badge/MCP-Compatible-purple)](https://modelcontextprotocol.io) [![ast-grep](https://img.shields.io/badge/Powered_by-ast--grep-orange)](https://ast-grep.github.io)
 
 ## ❌ Without XRAY
 
@@ -13,7 +13,7 @@ AI assistants struggle with codebase understanding. You get:
 
 ## ✅ With XRAY
 
-XRAY gives AI assistants **actual code intelligence**. Add `use XRAY tools` to your prompt:
+XRAY gives AI assistants code navigation capabilities. Add `use XRAY tools` to your prompt:
 
 ```txt
 Analyze the UserService class and show me what would break if I change the authenticate method. use XRAY tools
@@ -25,10 +25,11 @@ Find all functions that call validate_user and show their dependencies. use XRAY
 
 XRAY provides:
 
-- 🔍 **Fast Symbol Search** - Find functions, classes instantly  
-- 💥 **Impact Analysis** - "What breaks if I change this?" (THE KILLER FEATURE)
-- 🔗 **Dependency Tracking** - What does this symbol depend on?
-- 📍 **Location Queries** - What symbol is at file:line?
+- 🔍 **Symbol Search** - Find functions and classes with fuzzy matching
+- 💥 **Impact Analysis** - Find references to a symbol by name
+- 🔗 **Dependency Tracking** - Extract function calls and imports from a symbol
+- 🌳 **File Tree** - Display directory structure with gitignore support
+- 🚀 **Structural Search** - Uses ast-grep for syntax-aware matching
 
 ## 🚀 Quick Install (30 seconds)
 
@@ -63,48 +64,47 @@ python mcp-config-generator.py vscode source
 
 ## Language Support
 
-Currently supported:
-- **Python** - Functions, classes, methods, imports, function calls
-- **JavaScript** - Functions, classes, methods, imports, exports, arrow functions
-- **TypeScript** - All JavaScript features plus interfaces, type aliases, enums, namespaces
-- **Go** - Functions, structs, interfaces, methods, imports, type declarations
+XRAY uses [ast-grep](https://ast-grep.github.io), a tree-sitter powered structural search tool, providing accurate parsing for:
+- **Python** - Functions, classes, methods, async functions
+- **JavaScript** - Functions, classes, arrow functions, imports
+- **TypeScript** - All JavaScript features plus interfaces, type aliases
+- **Go** - Functions, structs, interfaces, methods
+
+ast-grep ensures structural accuracy - it understands code syntax, not just text patterns.
 
 ## Usage Examples
 
 ### Building the Index
 ```python
-# Index current directory
-result = build_index(".")
-# Returns: {"success": true, "files_indexed": 42, "symbols_found": 256, ...}
+# Generate visual file tree
+result = build_index("/path/to/project")
+# Returns a formatted tree structure of your project
 ```
 
-### Symbol Search
+### Symbol Search with Fuzzy Matching
 ```python
-# Find symbols matching "user"
-result = find_symbol("user", limit=10)
-# Returns: {"total_matches": 5, "symbols": [...]}
+# Find symbols matching "user" (fuzzy search)
+result = find_symbol("/path/to/project", "user auth")
+# Returns top matches for functions, classes, methods containing these terms
 ```
 
-### Impact Analysis (THE KILLER FEATURE)
+### Impact Analysis
 ```python
-# What breaks if I change authenticate_user?
-result = what_breaks("authenticate_user")
-# Returns: {"total_impacts": 12, "impacts_by_file": {...}, "reasoning": [...]}
+# Find references to authenticate_user
+symbol = find_symbol("/path/to/project", "authenticate_user")[0]
+result = what_breaks(symbol)
+# Returns: {"references": [...], "total_count": 12, "note": "..."}
+# Note: Matches by name, may include unrelated symbols with same name
 ```
 
 ### Dependency Analysis
 ```python
-# What does UserService depend on?
-result = what_depends("UserService")  
-# Returns: {"total_dependencies": 3, "dependencies": [...]}
+# What does UserService.authenticate depend on?
+symbol = find_symbol("/path/to/project", "authenticate")[0]
+result = what_depends(symbol)
+# Returns: ["get_user", "verify_password", "logging", ...]
 ```
 
-### Location Queries
-```python
-# What symbol is at main.py:25?
-result = get_info("main.py", 25)
-# Returns: {"symbol": {"name": "process_request", "kind": "function", ...}}
-```
 
 ## Architecture
 
@@ -112,51 +112,59 @@ result = get_info("main.py", 25)
 FastMCP Server (mcp_server.py)
     ↓
 Core Engine (src/xray/core/)
-    ├── indexer.py      # Build symbol database
-    ├── query.py        # Search symbols  
-    ├── impact.py       # Impact analysis (BFS graph traversal)
-    └── schema.py       # SQLite database management
+    └── indexer.py      # Orchestrates ast-grep for structural analysis
     ↓
-Symbol Extraction (src/xray/parsers/)
-    ├── base.py         # Parser interface & language detection
-    ├── python.py       # Tree-sitter Python parser
-    ├── javascript.py   # Tree-sitter JavaScript parser
-    ├── typescript.py   # Tree-sitter TypeScript parser
-    └── go.py           # Tree-sitter Go parser
-    ↓
-SQLite Database (.xray/xray.db)
-    ├── symbols         # Functions, classes, methods
-    └── edges           # Call graph, imports, dependencies
+ast-grep (external binary)
+    └── Tree-sitter powered structural search
 ```
+
+**Stateless design** - No database, no persistent index. Each operation runs fresh ast-grep queries for real-time accuracy.
+
+## Why ast-grep?
+
+Traditional grep searches text. ast-grep searches code structure:
+
+- **grep**: Finds "authenticate" in function names, variables, comments, strings
+- **ast-grep**: Finds only `def authenticate()` or `function authenticate()` definitions
+
+This structural approach provides clean, accurate results essential for reliable code intelligence.
 
 ## Performance Characteristics
 
-- **Indexing**: ~1000 files/second on modern hardware
-- **Symbol search**: <5ms for substring matching  
-- **Impact analysis**: <50ms for depth 5
-- **Memory usage**: ~100MB for 100k symbols
-- **Database size**: ~10MB for 100k symbols
+- **Startup**: Fast - launches ast-grep subprocess
+- **File tree**: Python directory traversal
+- **Symbol search**: Runs multiple ast-grep patterns, speed depends on codebase size
+- **Impact analysis**: Name-based search across all files
+- **Memory**: Minimal - no persistent state
 
 ## What Makes This Practical
 
-1. **No external dependencies** - Just Python + Tree-sitter
-2. **No configuration required** - Works out of the box
-3. **Fast enough** - Sub-second indexing for most repos
-4. **Simple codebase** - ~1000 lines of focused code
-5. **Actually useful** - Answers the questions that matter
+1. **Simple installation** - `pip install` handles dependencies
+2. **No configuration** - Works with default settings
+3. **Syntax-aware** - ast-grep matches code structure, not just text
+4. **Stateless** - No index to maintain
+5. **Based on tree-sitter** - Uses established parsing technology
 
-The **impact analysis** tool alone makes this invaluable for understanding code changes. Combined with fast symbol search and dependency tracking, XRAY provides exactly what AI assistants need to navigate and understand codebases effectively.
+XRAY provides basic code navigation tools that help AI assistants understand codebases better than plain text search.
 
-## Database Storage
+## Stateless Design
 
-The code intelligence database is stored in `.xray/xray.db` in your repository root. This directory is automatically added to `.gitignore` to avoid committing the database.
+XRAY performs on-demand structural analysis using ast-grep. There's no database to manage, no index to build, and no state to maintain. Each query runs fresh against your current code.
 
 ## Getting Started
 
-1. **Install**: See [`getting_started.md`](getting_started.md)
-2. **Index a repo**: Call the `build_index(".")` MCP tool
-3. **Search symbols**: `find_symbol("UserService")`
-4. **Impact analysis**: `what_breaks("authenticate_user")`
-5. **Explore dependencies**: `what_depends("UserModel")`
+1. **Install**: See [`getting_started.md`](getting_started.md) or [`GETTING_STARTED_UV.md`](GETTING_STARTED_UV.md) for modern installation
+2. **View project structure**: `build_index("/path/to/project")`
+3. **Search symbols**: `find_symbol("/path/to/project", "UserService")`
+4. **Impact analysis**: Find symbol first, then `what_breaks(symbol)`
+5. **Explore dependencies**: Find symbol first, then `what_depends(symbol)`
 
-This creates a powerful, practical code intelligence system that transforms how AI assistants understand and navigate codebases.
+## The XRAY Philosophy
+
+XRAY bridges the gap between simple text search and complex LSP servers:
+
+- **More than grep** - Matches code syntax patterns, not just text
+- **Less than LSP** - No language servers or complex setup
+- **Practical for AI** - Provides structured data about code relationships
+
+A simple tool that helps AI assistants navigate codebases more effectively than text search alone.

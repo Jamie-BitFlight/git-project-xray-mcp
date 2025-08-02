@@ -1,224 +1,309 @@
-# Getting Started with XRAY
+# Getting Started with XRAY - Modern Installation with uv
 
-XRAY is a powerful code intelligence system that enhances AI assistants' understanding of codebases. It provides fast symbol search, impact analysis, dependency tracking, and location-based queries.
+XRAY is a zero-dependency code intelligence system that enhances AI assistants' understanding of codebases. This guide shows how to install and use XRAY with the modern `uv` package manager.
 
-## Supported Languages
+## Prerequisites
 
-XRAY currently supports:
-- **Python** - Functions, classes, methods, imports, function calls
-- **JavaScript** - Functions, classes, methods, imports, exports, arrow functions
-- **TypeScript** - All JavaScript features plus interfaces, type aliases, enums, namespaces
-- **Go** - Functions, structs, interfaces, methods, imports, type declarations
+- Python 3.10 or later
+- [uv](https://docs.astral.sh/uv/) - Fast Python package manager
 
-## 🚀 Quick Start (30 seconds)
-
-> **Recommended:** For the modern installation experience using `uv` (10-100x faster than pip), see [GETTING_STARTED_UV.md](GETTING_STARTED_UV.md)
-
-### Option 1: Quick Start with `install.sh` (Recommended)
-
-For the fastest and easiest setup, use our automated installation script. This script handles cloning the repository, setting up a virtual environment, installing dependencies, and creating a convenient wrapper script to run the XRAY MCP server.
+### Installing uv
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/srijanshukla18/xray/main/install.sh | bash
+# macOS/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# Or with pip
+pip install uv
 ```
 
-After running the script, you can start the XRAY MCP server by simply typing `xray-mcp` in your terminal.
+## Installation Options
 
-### Option 2: Manual Python Installation
+### Option 1: Quick Try with uvx (Recommended for Testing)
 
-This method installs XRAY directly into your Python environment and provides direct access to your local filesystem for analyzing codebases. Use this option if you prefer more control over the installation process.
-
-**Prerequisites:**
-*   Python 3.11+
-*   Git
+Run XRAY directly without installation using `uvx`:
 
 ```bash
-# Clone repository
+# Clone the repository
 git clone https://github.com/srijanshukla18/xray.git
 cd xray
 
-# Install dependencies (using a virtual environment is recommended)
-python -m venv venv
-source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
-pip install -e .
-
-# Run server
-python run_server.py
+# Run XRAY directly with uvx
+uvx --from . xray-mcp
 ```
 
-## 🔌 MCP Client Integration
+### Option 2: Install as a Tool (Recommended for Regular Use)
 
-After installing XRAY, you need to configure your AI assistant (MCP Client) to communicate with the XRAY server. You will typically add a JSON configuration snippet to your client's settings.
-
-You can use the `mcp-config-generator.py` script to help create the correct configuration for your setup:
+Install XRAY as a persistent tool:
 
 ```bash
-# Example: Generate config for Cursor using local Python installation
-python mcp-config-generator.py cursor local_python
+# Clone and install
+git clone https://github.com/srijanshukla18/xray.git
+cd xray
+
+# Install with uv
+uv tool install .
+
+# Now you can run xray-mcp from anywhere
+xray-mcp
 ```
 
-Here are example configuration snippets for common clients:
+### Option 3: Development Installation
 
-### Cursor
+For contributing or modifying XRAY:
 
-Go to: `Settings` → `Cursor Settings` → `MCP` → `Add new global MCP server`
+```bash
+# Clone the repository
+git clone https://github.com/srijanshukla18/xray.git
+cd xray
 
-*   **Local Python Installation:**
-    ```json
-    {
-      "mcpServers": {
-        "xray": {
-          "command": "python",
-          "args": ["-m", "xray.mcp_server"]
-        }
-      }
-    }
-    ```
+# Create and activate virtual environment with uv
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-*   **Installed Script (Recommended):**
-    ```json
-    {
-      "mcpServers": {
-        "xray": {
-          "command": "xray-mcp"
-        }
-      }
-    }
-    ```
+# Install in editable mode
+uv pip install -e .
+
+# Run the server
+python -m xray.mcp_server
+```
+
+### Option 4: Direct from GitHub (Coming Soon)
+
+Once published to PyPI:
+
+```bash
+# Install directly
+uv tool install xray
+
+# Or run without installation
+uvx xray
+```
+
+## Configure Your AI Assistant
+
+After installation, configure your AI assistant to use XRAY:
+
+### Claude CLI (Claude Code)
+
+For Claude CLI users, simply run:
+
+```bash
+claude mcp add xray xray-mcp -s local
+```
+
+Then verify it's connected:
+
+```bash
+claude mcp list | grep xray
+```
 
 ### Claude Desktop
 
-Add to your Claude Desktop config file (e.g., `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS).
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
 
-*   **Local Python Installation:**
-    ```json
-    {
-      "mcpServers": {
-        "xray": {
-          "command": "python",
-          "args": ["-m", "xray.mcp_server"]
-        }
-      }
+```json
+{
+  "mcpServers": {
+    "xray": {
+      "command": "uvx",
+      "args": ["--from", "/path/to/xray", "xray-mcp"]
     }
-    ```
-
-*   **Installed Script (Recommended):**
-    ```json
-    {
-      "mcpServers": {
-        "xray": {
-          "command": "xray-mcp"
-        }
-      }
-    }
-    ```
-
-### VS Code
-
-Add to your VS Code MCP config file.
-
-*   **Local Python Installation:**
-    ```json
-    {
-      "mcp": {
-        "servers": {
-          "xray": {
-            "type": "stdio",
-            "command": "python",
-            "args": ["-m", "xray.mcp_server"]
-          }
-        }
-      }
-    }
-    ```
-
-*   **Installed Script (Recommended):**
-    ```json
-    {
-      "mcp": {
-        "servers": {
-          "xray": {
-            "type": "stdio",
-            "command": "xray-mcp"
-          }
-        }
-      }
-    }
-    ```
-
-## 🎯 Specifying Target Repository
-
-XRAY tools accept a `path` parameter to specify which repository to analyze. By default, they analyze the current working directory.
-
-```bash
-# Examples when using XRAY tools:
-build_index(path="/path/to/your/project")
-find_symbol(query="UserService", path="/path/to/your/project")
-what_breaks(symbol_name="authenticate", path="/path/to/your/project")
+  }
+}
 ```
 
-If you don't specify a path, XRAY will analyze the current directory. When XRAY detects it's analyzing its own codebase, it will show a warning.
+Or if installed as a tool:
 
-## 📁 Database Storage
-
-XRAY stores its databases in your home directory at `~/.xray/databases/`. Each repository gets its own database based on a hash of its path, allowing multiple repositories to be analyzed simultaneously without conflicts.
-
-## 🎯 Usage
-
-Once installed and configured, use XRAY's code intelligence tools by adding `use XRAY tools` to your prompts within your AI assistant.
-
-**Example Prompts:**
-
-*   `Analyze the UserService class and show me what would break if I change the authenticate method. use XRAY tools`
-*   `Find all functions that call validate_user and show their dependencies. use XRAY tools`
-*   `What symbol is defined at line 42 in auth.py? use XRAY tools`
-
-### Available Tools
-
-*   **`build_index`**: Index your codebase for analysis.
-*   **`find_symbol`**: Search for functions/classes by name.
-*   **`what_breaks`**: Impact analysis (shows what depends on a symbol).
-*   **`what_depends`**: Dependency analysis (shows what a symbol uses).
-*   **`get_info`**: Get the symbol at a specific file and line number.
-
-## 🧪 Verify Your Installation
-
-After installation, you can verify XRAY is working correctly:
-
-### Quick Test
-
-```bash
-# Run the installation test script
-python test_installation.py
+```json
+{
+  "mcpServers": {
+    "xray": {
+      "command": "xray-mcp"
+    }
+  }
+}
 ```
 
-This will check:
-- All required modules are installed
-- Language parsers are available  
-- Basic indexing functionality works
-- MCP server can be initialized
+### Cursor
 
-### Manual Test
+Settings → Cursor Settings → MCP → Add new global MCP server:
 
-1. Create a test file `example.py`:
+```json
+{
+  "mcpServers": {
+    "xray": {
+      "command": "xray-mcp"
+    }
+  }
+}
+```
+
+## No External Dependencies Required!
+
+One of XRAY's best features is that it requires **zero external dependencies**. You don't need to install any language servers, binaries, or tools. XRAY uses:
+
+- **Python**: Built-in `ast` module for 100% accurate parsing
+- **JavaScript/TypeScript/Go**: Intelligent pattern matching
+
+This means you can start using XRAY immediately after installation with no additional setup!
+
+## Verify Installation
+
+### 1. Check XRAY is accessible
+
+```bash
+# If installed as tool
+xray-mcp --version
+
+# If using uvx
+uvx --from /path/to/xray xray-mcp --version
+```
+
+### 2. Test basic functionality
+
+Create a test file `test_xray.py`:
+
 ```python
-def calculate_total(items):
-    return sum(items)
+def hello_world():
+    print("Hello from XRAY test!")
 
-class ShoppingCart:
-    def add_item(self, item):
-        self.items.append(item)
+def calculate_sum(a, b):
+    return a + b
+
+class Calculator:
+    def multiply(self, x, y):
+        return x * y
 ```
 
-2. In your AI assistant, test these commands:
-   - `Build the index for the current directory. use XRAY tools`
-   - `Find all functions in example.py. use XRAY tools`
-   - `What would break if I change add_item? use XRAY tools`
+### 3. In your AI assistant, test these commands:
 
-## 🆘 Troubleshooting
+```
+Build the index for the current directory. use XRAY tools
+```
 
-*   **Python not found:** Make sure Python 3.11+ is installed and correctly added to your system's PATH.
-*   **Docker not running:** This option has been removed. Please use the Python installation method.
-*   **Permission denied:** You might need to run commands with `sudo` or check file/directory permissions.
-*   **Port conflicts:** XRAY uses standard input/output (stdio) by default, so port conflicts are generally not an issue unless you explicitly configure it to use a network port.
-*   **Import errors:** Run `python test_installation.py` to diagnose missing dependencies.
+Expected: Success message with files indexed
+
+```
+Find all functions containing "hello". use XRAY tools
+```
+
+Expected: Should find `hello_world` function
+
+```
+What would break if I change the multiply method? use XRAY tools
+```
+
+Expected: Impact analysis showing any dependencies
+
+## Usage Examples
+
+Once configured, use XRAY by adding "use XRAY tools" to your prompts:
+
+```
+# Index a codebase
+"Index the src/ directory for analysis. use XRAY tools"
+
+# Find symbols
+"Find all classes that contain 'User' in their name. use XRAY tools"
+
+# Impact analysis
+"What breaks if I change the authenticate method in UserService? use XRAY tools"
+
+# Dependency tracking
+"What does the PaymentProcessor class depend on? use XRAY tools"
+
+# Location queries
+"What function is defined at line 125 in main.py? use XRAY tools"
+```
+
+## Troubleshooting
+
+### uv not found
+
+Make sure uv is in your PATH:
+
+```bash
+# Add to ~/.bashrc or ~/.zshrc
+export PATH="$HOME/.cargo/bin:$PATH"
+```
+
+### Permission denied
+
+On macOS/Linux, you might need to make the script executable:
+
+```bash
+chmod +x ~/.local/bin/xray-mcp
+```
+
+### Python version issues
+
+XRAY requires Python 3.10+. Check your version:
+
+```bash
+python --version
+
+# If needed, install Python 3.10+ with uv
+uv python install 3.10
+```
+
+### MCP connection issues
+
+1. Check XRAY is running: `xray-mcp --test`
+2. Verify your MCP config JSON is valid
+3. Restart your AI assistant after config changes
+
+## Advanced Configuration
+
+### Custom Database Location
+
+Set the `XRAY_DB_PATH` environment variable:
+
+```bash
+export XRAY_DB_PATH="$HOME/.xray/databases"
+```
+
+### Debug Mode
+
+Enable debug logging:
+
+```bash
+export XRAY_DEBUG=1
+```
+
+## What's Next?
+
+1. **Index your first repository**: In your AI assistant, ask it to "Build the index for my project. use XRAY tools"
+
+2. **Explore the tools**:
+   - `build_index` - Visual file tree of your repository
+   - `find_symbol` - Fuzzy search for functions, classes, and methods
+   - `what_breaks` - Find what code depends on a symbol (reverse dependencies)
+   - `what_depends` - Find what a symbol depends on (calls and imports)
+   
+   Note: Results may include matches from comments or strings. The AI assistant will intelligently filter based on context.
+
+3. **Read the documentation**: Check out the [README](README.md) for detailed examples and API reference
+
+## Why XRAY Uses Pure Python
+
+XRAY v0.3.0+ uses a pure Python implementation that requires zero external dependencies:
+
+- **No binaries to install** - No Semgrep, tree-sitter, or language servers needed
+- **Works immediately** - Just `pip install` and go
+- **Cross-platform** - Works on any system with Python 3.10+
+- **High recall approach** - Finds all potential symbols, lets AI filter intelligently
+- **Pluggable architecture** - Can optionally add better parsers later if needed
+
+## Benefits of Using uv
+
+- **10-100x faster** than pip for installations
+- **No virtual environment hassles** - uv manages everything
+- **Reproducible installs** - uv.lock ensures consistency
+- **Built-in Python management** - install any Python version
+- **Global tool management** - like pipx but faster
+
+Happy coding with XRAY! 🚀

@@ -1,491 +1,406 @@
-"""Core indexing engine for XRAY."""
+"""Core indexing engine for XRAY - ast-grep based implementation."""
 
-import time
+import os
+import json
+import subprocess
 from pathlib import Path
-from typing import Dict, List, Optional, Set
-from dataclasses import dataclass
+from typing import Dict, List, Optional, Any, Set
+import fnmatch
+from thefuzz import fuzz
 
-from .schema import DatabaseManager
-from ..parsers.base import (
-    LanguageRegistry, LanguageDetector, load_tree_sitter_languages,
-    Symbol, Edge, CanonicalIdGenerator
-)
-from ..parsers.python import PythonParser
-from ..parsers.javascript import JavaScriptParser
-from ..parsers.typescript import TypeScriptParser
-from ..parsers.go import GoParser
-
-
-@dataclass
-class IndexingResult:
-    """Result of indexing operation."""
-    success: bool
-    files_indexed: int
-    symbols_found: int
-    edges_created: int
-    duration_seconds: float
-    database_size_kb: float
-    errors: List[str]
+# Default exclusions
+DEFAULT_EXCLUSIONS = {
+    # Directories
+    "node_modules", "vendor", "__pycache__", "venv", ".venv", "env",
+    "target", "build", "dist", ".git", ".svn", ".hg", ".idea", ".vscode",
+    ".xray", "site-packages", ".tox", ".pytest_cache", ".mypy_cache",
     
-    def to_dict(self) -> dict:
-        """Convert to dictionary for JSON serialization."""
-        return {
-            "success": self.success,
-            "files_indexed": self.files_indexed,
-            "symbols_found": self.symbols_found,
-            "edges_created": self.edges_created,
-            "duration_seconds": round(self.duration_seconds, 3),
-            "database_size_kb": self.database_size_kb,
-            "errors": self.errors
-        }
+    # File patterns
+    "*.pyc", "*.pyo", "*.pyd", "*.so", "*.dll", "*.log", 
+    ".DS_Store", "Thumbs.db", "*.swp", "*.swo", "*~"
+}
 
 
 class XRayIndexer:
-    """Core indexing engine for XRAY."""
+    """Main indexer for XRAY - provides file tree and symbol extraction using ast-grep."""
     
-    def __init__(self, repo_path: str = "."):
-        """Initialize the indexer.
-        
-        Args:
-            repo_path: Path to the repository root
+    def __init__(self, root_path: str):
+        self.root_path = Path(root_path).resolve()
+    
+    def build_index(self) -> str:
         """
-        self.repo_path = Path(repo_path).resolve()
-        self.db = DatabaseManager(str(self.repo_path))
-        self.registry = LanguageRegistry()
-        self.errors: List[str] = []
-        
-        # Initialize database (safe to call multiple times)
-        self.db.initialize_database_if_needed()
-        
-        # Load and register languages
-        self._setup_languages()
-    
-    def _setup_languages(self) -> None:
-        """Set up language parsers."""
-        languages = load_tree_sitter_languages()
-        
-        # Register Python parser
-        if 'python' in languages:
-            self.registry.register_language('python', languages['python'], PythonParser)
-        
-        # Register JavaScript parser
-        if 'javascript' in languages:
-            self.registry.register_language('javascript', languages['javascript'], JavaScriptParser)
-        
-        # Register TypeScript parser
-        if 'typescript' in languages:
-            self.registry.register_language('typescript', languages['typescript'], TypeScriptParser)
-        
-        # Register Go parser
-        if 'go' in languages:
-            self.registry.register_language('go', languages['go'], GoParser)
-    
-    def build_index(self, path: Optional[str] = None, force_rebuild: bool = True) -> IndexingResult:
-        """Build the code intelligence index.
-        
-        Args:
-            path: Path to index (defaults to repo root)
-            force_rebuild: Whether to clear existing database
-            
-        Returns:
-            IndexingResult with statistics and status
+        Build a visual file tree of the repository.
+        Returns a formatted tree string.
         """
-        start_time = time.time()
-        self.errors = []
+        # Get gitignore patterns if available
+        gitignore_patterns = self._parse_gitignore()
         
-        if path is None:
-            path = str(self.repo_path)
+        # Build the tree
+        tree_lines = []
+        self._build_tree_recursive(
+            self.root_path, 
+            tree_lines, 
+            "", 
+            gitignore_patterns,
+            is_last=True
+        )
         
-        try:
-            # Clear database if force rebuild
-            if force_rebuild:
-                self.db.clear_database()
-            
-            # Find all source files
-            source_files = LanguageDetector.find_source_files(path)
-            
-            if not source_files:
-                return IndexingResult(
-                    success=True,
-                    files_indexed=0,
-                    symbols_found=0,
-                    edges_created=0,
-                    duration_seconds=time.time() - start_time,
-                    database_size_kb=self.db.get_database_stats()["database_size_kb"],
-                    errors=["No supported source files found"]
-                )
-            
-            # Parse files and extract symbols
-            all_symbols = []
-            all_edges = []
-            files_processed = 0
-            
-            for file_path in source_files:
-                print(f"Indexing file: {file_path}", file=sys.stderr)
-                print(f"Indexing file: {file_path}", file=sys.stderr)
-                try:
-                    symbols, edges = self.registry.parse_file(file_path)
-                    
-                    if symbols:  # Only count files that had symbols
-                        all_symbols.extend(symbols)
-                        all_edges.extend(edges)
-                        files_processed += 1
-                
-                except Exception as e:
-                    error_msg = f"Error processing {file_path}: {str(e)}"
-                    self.errors.append(error_msg)
-                    continue
-            
-            # Convert symbols to database format with canonical IDs
-            # First pass: insert symbols without parent_id to avoid foreign key issues
-            symbol_records = []
-            symbol_list_to_db_id = {}  # Map list index to database ID
-            all_aliases = []  # Store all aliases to insert later
-            
-            for i, symbol in enumerate(all_symbols):
-                # Find parent symbol for canonical ID generation
-                parent_symbol = None
-                if symbol.parent_id is not None and symbol.parent_id < len(all_symbols):
-                    parent_symbol = all_symbols[symbol.parent_id]
-                
-                # Generate canonical ID
-                canonical_id = CanonicalIdGenerator.generate_canonical_id(
-                    symbol, parent_symbol, self.repo_path
-                )
-                
-                record = {
-                    "canonical_id": canonical_id,
-                    "name": symbol.name,
-                    "kind": symbol.kind,
-                    "file": str(Path(symbol.file).relative_to(self.repo_path)),
-                    "line": symbol.line,
-                    "column": symbol.column,
-                    "end_line": symbol.end_line,
-                    "signature": symbol.signature,
-                    "parent_id": None  # Will be updated in second pass
-                }
-                symbol_records.append(record)
-            
-            # Insert symbols in bulk
-            inserted_ids = self.db.insert_symbols_bulk(symbol_records)
-            
-            # Create mapping from list index to database ID
-            for i, db_id in enumerate(inserted_ids):
-                symbol_list_to_db_id[i] = db_id
-            
-            # Generate aliases for all symbols
-            for i, symbol in enumerate(all_symbols):
-                parent_symbol = None
-                if symbol.parent_id is not None and symbol.parent_id < len(all_symbols):
-                    parent_symbol = all_symbols[symbol.parent_id]
-                
-                # Generate aliases for this symbol
-                symbol_aliases = CanonicalIdGenerator.generate_all_aliases(
-                    symbol, parent_symbol, self.repo_path, symbol.file
-                )
-                
-                # Add symbol_id to each alias
-                for alias in symbol_aliases:
-                    alias["symbol_id"] = inserted_ids[i]
-                    all_aliases.append(alias)
-            
-            # Insert all aliases
-            if all_aliases:
-                self.db.insert_aliases_bulk(all_aliases)
-            
-            # Second pass: update parent_id relationships
-            symbols_to_update = []
-            for i, symbol in enumerate(all_symbols):
-                if symbol.parent_id is not None and symbol.parent_id in symbol_list_to_db_id:
-                    symbols_to_update.append((symbol_list_to_db_id[symbol.parent_id], inserted_ids[i]))
-            
-            # Update parent_id relationships
-            if symbols_to_update:
-                with self.db.get_connection() as conn:
-                    conn.executemany("UPDATE symbols SET parent_id = ? WHERE id = ?", symbols_to_update)
-                    conn.commit()
-            
-            # Create comprehensive symbol mapping for edge resolution
-            symbol_mappings = self._create_symbol_mappings(all_symbols, inserted_ids)
-            
-            # Resolve and insert edges with improved cross-file resolution
-            edge_tuples = []
-            for edge in all_edges:
-                from_id = self._resolve_symbol_id_by_alias(edge.from_symbol, edge.from_file)
-                to_id = self._resolve_symbol_id_by_alias(edge.to_symbol, edge.to_file)
-                
-                if from_id and to_id and from_id != to_id:
-                    # Determine edge type based on edge characteristics
-                    edge_type = self._determine_edge_type(edge)
-                    provenance = f"{edge.from_symbol} -> {edge.to_symbol}"
-                    edge_tuples.append((from_id, to_id, edge_type, provenance))
-            
-            # Add cross-file import-to-usage edges
-            cross_file_edges = self._create_cross_file_edges_new(all_symbols, inserted_ids)
-            edge_tuples.extend(cross_file_edges)
-            
-            # Remove duplicates (based on from_id, to_id, edge_type)
-            edge_tuples = list(set(edge_tuples))
-            
-            # Insert edges in bulk
-            if edge_tuples:
-                self.db.insert_edges_bulk(edge_tuples)
-            
-            # Get final statistics
-            duration = time.time() - start_time
-            db_stats = self.db.get_database_stats()
-            
-            # Save index timestamp
-            self.db.set_metadata("index_timestamp", str(time.time()))
-            self.db.set_metadata("indexed_files", str(files_processed))
-            self.db.set_metadata("indexed_symbols", str(len(all_symbols)))
-            
-            return IndexingResult(
-                success=True,
-                files_indexed=files_processed,
-                symbols_found=len(all_symbols),
-                edges_created=len(edge_tuples),
-                duration_seconds=duration,
-                database_size_kb=db_stats["database_size_kb"],
-                errors=self.errors.copy()
-            )
-        
-        except Exception as e:
-            return IndexingResult(
-                success=False,
-                files_indexed=0,
-                symbols_found=0,
-                edges_created=0,
-                duration_seconds=time.time() - start_time,
-                database_size_kb=0,
-                errors=[f"Indexing failed: {str(e)}"]
-            )
+        return "\n".join(tree_lines)
     
-    def get_supported_languages(self) -> List[str]:
-        """Get list of supported programming languages.
+    def _parse_gitignore(self) -> Set[str]:
+        """Parse .gitignore file if it exists."""
+        patterns = set()
+        gitignore_path = self.root_path / ".gitignore"
         
-        Returns:
-            List of supported language names
-        """
-        return self.registry.get_supported_languages()
+        if gitignore_path.exists():
+            try:
+                with open(gitignore_path, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith('#'):
+                            patterns.add(line)
+            except Exception:
+                pass
+        
+        return patterns
     
-    def get_database_stats(self) -> dict:
-        """Get current database statistics.
+    def _should_exclude(self, path: Path, gitignore_patterns: Set[str]) -> bool:
+        """Check if a path should be excluded."""
+        name = path.name
         
-        Returns:
-            Dictionary with database statistics
-        """
-        return self.db.get_database_stats()
+        # Check default exclusions
+        if name in DEFAULT_EXCLUSIONS:
+            return True
+        
+        # Check file pattern exclusions
+        for pattern in DEFAULT_EXCLUSIONS:
+            if '*' in pattern and fnmatch.fnmatch(name, pattern):
+                return True
+        
+        # Check gitignore patterns (simplified)
+        for pattern in gitignore_patterns:
+            if pattern in str(path.relative_to(self.root_path)):
+                return True
+            if fnmatch.fnmatch(name, pattern):
+                return True
+        
+        return False
     
-    def is_index_available(self) -> bool:
-        """Check if index is available and has data.
+    def _build_tree_recursive(
+        self, 
+        path: Path, 
+        tree_lines: List[str], 
+        prefix: str, 
+        gitignore_patterns: Set[str],
+        is_last: bool = False
+    ):
+        """Recursively build the tree representation."""
+        if self._should_exclude(path, gitignore_patterns):
+            return
         
-        Returns:
-            True if index exists and has symbols, False otherwise
-        """
-        try:
-            stats = self.db.get_database_stats()
-            return stats["symbols_count"] > 0
-        except:
-            return False
-    
-    def _create_symbol_mappings(self, all_symbols: List[Symbol], inserted_ids: List[int]) -> Dict[str, int]:
-        """Create comprehensive symbol mappings for edge resolution.
+        # Add current item
+        name = path.name if path != self.root_path else str(path)
+        connector = "└── " if is_last else "├── "
         
-        Args:
-            all_symbols: List of all extracted symbols
-            inserted_ids: List of database IDs for symbols
-            
-        Returns:
-            Dictionary mapping various symbol keys to database IDs
-        """
-        mappings = {}
-        
-        for i, symbol in enumerate(all_symbols):
-            db_id = inserted_ids[i]
-            rel_file = str(Path(symbol.file).relative_to(self.repo_path))
-            
-            # File-scoped mapping (highest priority)
-            file_key = f"{rel_file}:{symbol.name}"
-            mappings[file_key] = db_id
-            
-            # Global mapping for simple names (lower priority)
-            if symbol.name not in mappings:
-                mappings[symbol.name] = db_id
-            
-            # Class-qualified mapping for methods
-            if symbol.kind == 'method' and hasattr(symbol, 'parent_id') and symbol.parent_id is not None:
-                parent_symbol = all_symbols[symbol.parent_id]
-                qualified_name = f"{parent_symbol.name}.{symbol.name}"
-                mappings[qualified_name] = db_id
-                
-                # File-scoped qualified mapping
-                file_qualified_key = f"{rel_file}:{qualified_name}"
-                mappings[file_qualified_key] = db_id
-                
-                # Also map by the qualified name that _find_enclosing_function returns
-                # (which includes both class and method)
-                caller_qualified = f"{parent_symbol.name}.{symbol.name}"
-                mappings[caller_qualified] = db_id
-        
-        return mappings
-    
-    def _resolve_symbol_id(self, symbol_name: str, context_file: Optional[str], mappings: Dict[str, int]) -> Optional[int]:
-        """Resolve a symbol name to its database ID with context-aware lookup.
-        
-        Args:
-            symbol_name: Name of the symbol to resolve
-            context_file: File context for resolution (if available)
-            mappings: Symbol mappings dictionary
-            
-        Returns:
-            Database ID if found, None otherwise
-        """
-        if not symbol_name:
-            return None
-            
-        # If we have context file, try file-scoped lookup first
-        if context_file:
-            rel_file = str(Path(context_file).relative_to(self.repo_path))
-            file_key = f"{rel_file}:{symbol_name}"
-            if file_key in mappings:
-                return mappings[file_key]
-        
-        # Try global lookup
-        if symbol_name in mappings:
-            return mappings[symbol_name]
-            
-        # Handle special cases like <module> level calls
-        if symbol_name == "<module>":
-            return None
-            
-        return None
-    
-    def _create_cross_file_edges(self, all_symbols: List[Symbol], inserted_ids: List[int], mappings: Dict[str, int]) -> List[tuple]:
-        """Create cross-file dependency edges based on imports and usage.
-        
-        Args:
-            all_symbols: List of all extracted symbols
-            inserted_ids: List of database IDs for symbols
-            mappings: Symbol mappings dictionary
-            
-        Returns:
-            List of edge tuples (from_id, to_id) for cross-file dependencies
-        """
-        cross_file_edges = []
-        
-        # Group symbols by file
-        symbols_by_file = {}
-        for i, symbol in enumerate(all_symbols):
-            rel_file = str(Path(symbol.file).relative_to(self.repo_path))
-            if rel_file not in symbols_by_file:
-                symbols_by_file[rel_file] = []
-            symbols_by_file[rel_file].append((symbol, inserted_ids[i]))
-        
-        # For each file, find imports and create edges to their definitions
-        for file_path, file_symbols in symbols_by_file.items():
-            imports = [(symbol, db_id) for symbol, db_id in file_symbols if symbol.kind == 'import']
-            non_imports = [(symbol, db_id) for symbol, db_id in file_symbols if symbol.kind != 'import']
-            
-            # For each import in this file
-            for import_symbol, import_db_id in imports:
-                import_name = import_symbol.name
-                
-                # Find definition of this imported symbol in other files
-                for other_file, other_symbols in symbols_by_file.items():
-                    if other_file == file_path:
-                        continue
-                        
-                    # Look for class or function definitions with matching name
-                    for other_symbol, other_db_id in other_symbols:
-                        if (other_symbol.kind in ['class', 'function'] and 
-                            other_symbol.name == import_name):
-                            # Create edge from import to definition
-                            cross_file_edges.append((import_db_id, other_db_id))
-                            
-                            # Also create edges from any usage of this imported name
-                            # to the original definition
-                            for user_symbol, user_db_id in non_imports:
-                                if (user_symbol.kind in ['function', 'method'] and
-                                    import_name in (user_symbol.signature or "")):
-                                    cross_file_edges.append((user_db_id, other_db_id))
-        
-        return cross_file_edges
-    
-    def _resolve_symbol_id_by_alias(self, symbol_name: str, context_file: Optional[str]) -> Optional[int]:
-        """Resolve symbol name to database ID using the alias system.
-        
-        Args:
-            symbol_name: Symbol name to resolve
-            context_file: File context for resolution
-            
-        Returns:
-            Database ID if found, None otherwise
-        """
-        if not symbol_name or symbol_name == "<module>":
-            return None
-            
-        # Use the new alias-aware search
-        matches = self.db.find_symbols_by_alias(symbol_name, limit=1, context_file=context_file)
-        if matches:
-            return matches[0]['id']
-            
-        return None
-    
-    def _determine_edge_type(self, edge: Edge) -> str:
-        """Determine the type of dependency edge.
-        
-        Args:
-            edge: The edge to classify
-            
-        Returns:
-            Edge type string
-        """
-        # Basic classification based on common patterns
-        if '(' in edge.to_symbol:  # Function call
-            return 'call'
-        elif 'import' in edge.from_symbol.lower():  # Import relationship
-            return 'import'
-        elif edge.to_symbol[0].isupper():  # Class reference (capitalized)
-            return 'instantiate'
+        if path == self.root_path:
+            tree_lines.append(name)
         else:
-            return 'access'
-    
-    def _create_cross_file_edges_new(self, all_symbols: List[Symbol], inserted_ids: List[int]) -> List[tuple]:
-        """Create cross-file dependency edges using the new alias system.
+            tree_lines.append(prefix + connector + name)
         
-        Args:
-            all_symbols: List of all extracted symbols
-            inserted_ids: List of database IDs for symbols
-            
-        Returns:
-            List of edge tuples (from_id, to_id, edge_type, provenance)
-        """
-        cross_file_edges = []
-        
-        # Group symbols by file
-        symbols_by_file = {}
-        for i, symbol in enumerate(all_symbols):
-            rel_file = str(Path(symbol.file).relative_to(self.repo_path))
-            if rel_file not in symbols_by_file:
-                symbols_by_file[rel_file] = []
-            symbols_by_file[rel_file].append((symbol, inserted_ids[i]))
-        
-        # For each file, find imports and create edges to their definitions
-        for file_path, file_symbols in symbols_by_file.items():
-            imports = [(symbol, db_id) for symbol, db_id in file_symbols if symbol.kind == 'import']
-            
-            # For each import in this file
-            for import_symbol, import_db_id in imports:
-                import_name = import_symbol.name
+        # Only recurse into directories
+        if path.is_dir():
+            # Get children and sort them
+            try:
+                children = sorted(path.iterdir(), key=lambda p: (not p.is_dir(), p.name.lower()))
+                # Filter out excluded items
+                children = [c for c in children if not self._should_exclude(c, gitignore_patterns)]
                 
-                # Find definition of this imported symbol in other files  
-                definition_matches = self.db.find_symbols_by_alias(import_name, limit=10)
-                for match in definition_matches:
-                    if match['kind'] in ['class', 'function'] and match['file'] != file_path:
-                        # Create edge from import to definition
-                        provenance = f"import {import_name} from {match['file']}"
-                        cross_file_edges.append((import_db_id, match['id'], 'import', provenance))
-                        break  # Only link to first definition found
+                for i, child in enumerate(children):
+                    is_last_child = (i == len(children) - 1)
+                    extension = "    " if is_last else "│   "
+                    new_prefix = prefix + extension if path != self.root_path else ""
+                    
+                    self._build_tree_recursive(
+                        child, 
+                        tree_lines, 
+                        new_prefix, 
+                        gitignore_patterns,
+                        is_last_child
+                    )
+            except PermissionError:
+                pass
+    
+    def find_symbol(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """
+        Find symbols matching the query using fuzzy search.
+        Uses ast-grep to find all symbols, then fuzzy matches against the query.
         
-        return cross_file_edges
+        Returns a list of the top matching "Exact Symbol" objects.
+        """
+        all_symbols = []
+        
+        # Define patterns for different symbol types
+        patterns = [
+            # Python functions and classes
+            ("def $NAME($$$):", "function"),
+            ("class $NAME($$$):", "class"),
+            ("async def $NAME($$$):", "function"),
+            
+            # JavaScript/TypeScript functions and classes
+            ("function $NAME($$$)", "function"),
+            ("const $NAME = ($$$) =>", "function"),
+            ("let $NAME = ($$$) =>", "function"),
+            ("var $NAME = ($$$) =>", "function"),
+            ("class $NAME", "class"),
+            ("interface $NAME", "interface"),
+            ("type $NAME =", "type"),
+            
+            # Go functions and types
+            ("func $NAME($$$)", "function"),
+            ("func ($$$) $NAME($$$)", "method"),
+            ("type $NAME struct", "struct"),
+            ("type $NAME interface", "interface"),
+        ]
+        
+        # Run ast-grep for each pattern
+        for pattern, symbol_type in patterns:
+            cmd = [
+                "ast-grep",
+                "--pattern", pattern,
+                "--json",
+                str(self.root_path)
+            ]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            
+            if result.returncode == 0:
+                try:
+                    matches = json.loads(result.stdout)
+                    for match in matches:
+                        # Extract details from match
+                        text = match.get("text", "")
+                        file_path = match.get("file", "")
+                        start = match.get("range", {}).get("start", {})
+                        end = match.get("range", {}).get("end", {})
+                        
+                        # Extract the name from metavariables
+                        metavars = match.get("metaVariables", {})
+                        name = None
+                        
+                        # Try to get NAME from metavariables
+                        if "NAME" in metavars:
+                            name = metavars["NAME"]["text"]
+                        else:
+                            # Fallback to regex extraction
+                            name = self._extract_symbol_name(text)
+                        
+                        if name:
+                            symbol = {
+                                "name": name,
+                                "type": symbol_type,
+                                "path": file_path,
+                                "start_line": start.get("line", 1),
+                                "end_line": end.get("line", start.get("line", 1))
+                            }
+                            all_symbols.append(symbol)
+                except json.JSONDecodeError:
+                    continue
+        
+        # Deduplicate symbols (same name and location)
+        seen = set()
+        unique_symbols = []
+        for symbol in all_symbols:
+            key = (symbol["name"], symbol["path"], symbol["start_line"])
+            if key not in seen:
+                seen.add(key)
+                unique_symbols.append(symbol)
+        
+        # Now perform fuzzy matching against the query
+        scored_symbols = []
+        for symbol in unique_symbols:
+            # Calculate similarity score
+            score = fuzz.partial_ratio(query.lower(), symbol["name"].lower())
+            
+            # Boost score for exact substring matches
+            if query.lower() in symbol["name"].lower():
+                score = max(score, 80)
+            
+            scored_symbols.append((score, symbol))
+        
+        # Sort by score and take top results
+        scored_symbols.sort(key=lambda x: x[0], reverse=True)
+        top_symbols = [s[1] for s in scored_symbols[:limit]]
+        
+        return top_symbols
+    
+    def _extract_symbol_name(self, text: str) -> Optional[str]:
+        """Extract the symbol name from matched text."""
+        import re
+        
+        # Patterns to extract names from different definition types
+        patterns = [
+            r'(?:def|class|function|interface|type)\s+(\w+)',
+            r'(?:const|let|var)\s+(\w+)\s*=',
+            r'func\s+(?:\([^)]+\)\s+)?(\w+)',
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, text)
+            if match:
+                return match.group(1)
+        
+        return None
+    
+    def _determine_symbol_type(self, text: str) -> str:
+        """Determine the type of symbol from the matched text."""
+        if 'class' in text:
+            return 'class'
+        elif 'interface' in text:
+            return 'interface'
+        elif 'type' in text and ('struct' in text or 'interface' in text):
+            return 'type'
+        elif 'def' in text or 'function' in text or 'func' in text or '=>' in text:
+            return 'function'
+        else:
+            return 'unknown'
+    
+    def what_depends(self, exact_symbol: Dict[str, Any]) -> List[str]:
+        """
+        Find what a symbol depends on (calls/imports).
+        Uses ast-grep to analyze the specific code block.
+        """
+        file_path = exact_symbol['path']
+        start_line = exact_symbol['start_line']
+        end_line = exact_symbol['end_line']
+        
+        # Extract the relevant code block
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+                # Adjust for 0-based indexing
+                code_block = ''.join(lines[start_line-1:end_line])
+        except Exception:
+            return []
+        
+        # Create patterns to find function calls and imports
+        patterns = [
+            # Function calls
+            "$FUNC($$$)",
+            # Import statements
+            "import $MODULE",
+            "from $MODULE import $$$",
+            "import $MODULE from $$$",
+            "const $VAR = require($MODULE)",
+            "const $VAR = require('$MODULE')",
+            'const $VAR = require("$MODULE")',
+        ]
+        
+        dependencies = set()
+        
+        # Create a temporary file with the code block
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.tmp', delete=False) as f:
+            f.write(code_block)
+            temp_file = f.name
+        
+        try:
+            for pattern in patterns:
+                cmd = [
+                    "ast-grep",
+                    "--pattern", pattern,
+                    "--json",
+                    temp_file
+                ]
+                
+                result = subprocess.run(cmd, capture_output=True, text=True)
+                
+                if result.returncode == 0:
+                    try:
+                        matches = json.loads(result.stdout)
+                        for match in matches:
+                            # Extract metavariables
+                            metavars = match.get("metaVariables", {})
+                            
+                            # Try to get function name from FUNC
+                            if "FUNC" in metavars:
+                                dependencies.add(metavars["FUNC"]["text"])
+                            
+                            # Try to get module name from MODULE
+                            if "MODULE" in metavars:
+                                dependencies.add(metavars["MODULE"]["text"])
+                            
+                            # Fallback to text extraction
+                            if not metavars:
+                                text = match.get("text", "")
+                                dep_name = self._extract_dependency_name(text)
+                                if dep_name:
+                                    dependencies.add(dep_name)
+                    except json.JSONDecodeError:
+                        pass
+        finally:
+            os.unlink(temp_file)
+        
+        return sorted(list(dependencies))
+    
+    def _extract_dependency_name(self, text: str) -> Optional[str]:
+        """Extract dependency name from matched text."""
+        import re
+        
+        # Try to extract function name from calls
+        match = re.match(r'(\w+)\s*\(', text)
+        if match:
+            return match.group(1)
+        
+        # Try to extract module names from imports
+        patterns = [
+            r'import\s+(\w+)',
+            r'from\s+(\w+)',
+            r'require\s*\(\s*["\']([^"\']+)',
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, text)
+            if match:
+                return match.group(1)
+        
+        return None
+    
+    def what_breaks(self, exact_symbol: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Find what uses a symbol (reverse dependencies).
+        Uses ast-grep to search for calls to the symbol name.
+        
+        Returns a dictionary with references and a standard caveat.
+        """
+        symbol_name = exact_symbol['name']
+        
+        # Create pattern to find calls to this symbol
+        cmd = [
+            "ast-grep",
+            "--pattern", f"{symbol_name}($$$)",
+            "--json",
+            str(self.root_path)
+        ]
+        
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        references = []
+        if result.returncode == 0:
+            try:
+                matches = json.loads(result.stdout)
+                for match in matches:
+                    file_path = match.get("file", "")
+                    start = match.get("range", {}).get("start", {})
+                    
+                    references.append({
+                        "file": file_path,
+                        "line": start.get("line", 1)
+                    })
+            except json.JSONDecodeError:
+                pass
+        
+        return {
+            "references": references,
+            "total_count": len(references),
+            "note": f"Found {len(references)} potential call sites. Note: This search is based on the symbol's name and may include references to other items with the same name in different modules."
+        }

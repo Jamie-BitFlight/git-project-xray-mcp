@@ -1,30 +1,27 @@
 [project]
 name = "xray"
-version = "0.1.0"
-description = "XRAY: Fast code intelligence for AI assistants"
+version = "0.4.0"
+description = "XRAY: Structural code intelligence for AI assistants powered by ast-grep"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
     { name = "Srijan Shukla", email = "srijanshukla18@gmail.com" }
 ]
-keywords = ["mcp", "code-intelligence", "ai-assistant", "code-analysis"]
+keywords = ["mcp", "code-intelligence", "ai-assistant", "code-analysis", "ast-grep", "structural-search"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
     "fastmcp>=0.1.0",
-    "tree-sitter>=0.25.0",
-    "tree-sitter-python>=0.23.6",
-    "tree-sitter-javascript>=0.23.1", 
-    "tree-sitter-typescript>=0.23.2",
-    "tree-sitter-go>=0.23.4",
-    "pydantic>=2.0.0",
+    "ast-grep-cli>=0.39.0",
+    "thefuzz>=0.20.0",
 ]
 
 [project.urls]
