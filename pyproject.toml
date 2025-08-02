@@ -1,7 +1,7 @@
 [project]
 name = "xray"
-version = "0.4.0"
-description = "XRAY: Structural code intelligence for AI assistants powered by ast-grep"
+version = "0.6.0"
+description = "XRAY: Progressive code intelligence for AI assistants - Map, Find, Impact"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }

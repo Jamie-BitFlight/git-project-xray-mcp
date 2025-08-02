@@ -1,4 +1,4 @@
-# XRAY MCP - Structural Code Intelligence for AI Assistants
+# XRAY MCP - Progressive Code Intelligence for AI Assistants
 
 [![Python](https://img.shields.io/badge/Python-3.10+-green)](https://python.org) [![MCP](https://img.shields.io/badge/MCP-Compatible-purple)](https://modelcontextprotocol.io) [![ast-grep](https://img.shields.io/badge/Powered_by-ast--grep-orange)](https://ast-grep.github.io)
 
@@ -23,13 +23,11 @@ Analyze the UserService class and show me what would break if I change the authe
 Find all functions that call validate_user and show their dependencies. use XRAY tools
 ```
 
-XRAY provides:
+XRAY provides three focused tools:
 
-- 🔍 **Symbol Search** - Find functions and classes with fuzzy matching
-- 💥 **Impact Analysis** - Find references to a symbol by name
-- 🔗 **Dependency Tracking** - Extract function calls and imports from a symbol
-- 🌳 **File Tree** - Display directory structure with gitignore support
-- 🚀 **Structural Search** - Uses ast-grep for syntax-aware matching
+- 🗺️ **Map** (`explore_repo`) - See project structure with symbol skeletons
+- 🔍 **Find** (`find_symbol`) - Locate functions and classes with fuzzy search
+- 💥 **Impact** (`what_breaks`) - Find where a symbol is referenced
 
 ## 🚀 Quick Install (30 seconds)
 
@@ -72,37 +70,50 @@ XRAY uses [ast-grep](https://ast-grep.github.io), a tree-sitter powered structur
 
 ast-grep ensures structural accuracy - it understands code syntax, not just text patterns.
 
-## Usage Examples
+## The XRAY Workflow - Progressive Discovery
 
-### Building the Index
+### 1. Map - Start Simple, Then Zoom In
 ```python
-# Generate visual file tree
-result = build_index("/path/to/project")
-# Returns a formatted tree structure of your project
+# First: Get the big picture (directories only)
+tree = explore_repo("/path/to/project")
+# Returns:
+# /path/to/project/
+# ├── src/
+# ├── tests/
+# ├── docs/
+# └── config/
+
+# Then: Zoom into areas of interest with full details
+tree = explore_repo("/path/to/project", focus_dirs=["src"], include_symbols=True)
+# Returns:
+# /path/to/project/
+# └── src/
+#     ├── auth.py
+#     │   ├── class AuthService: # Handles user authentication
+#     │   ├── def authenticate(username, password): # Validates user credentials
+#     │   └── def logout(session_id): # Ends user session
+#     └── models.py
+#         ├── class User(BaseModel): # User account model
+#         └── ... and 3 more
+
+# Or: Limit depth for large codebases
+tree = explore_repo("/path/to/project", max_depth=2, include_symbols=True)
 ```
 
-### Symbol Search with Fuzzy Matching
+### 2. Find - Locate Specific Symbols
 ```python
-# Find symbols matching "user" (fuzzy search)
-result = find_symbol("/path/to/project", "user auth")
-# Returns top matches for functions, classes, methods containing these terms
+# Find symbols matching "authenticate" (fuzzy search)
+symbols = find_symbol("/path/to/project", "authenticate")
+# Returns list of exact symbol objects with name, type, path, line numbers
 ```
 
-### Impact Analysis
+### 3. Impact - See What Would Break
 ```python
-# Find references to authenticate_user
-symbol = find_symbol("/path/to/project", "authenticate_user")[0]
+# Find where authenticate_user is used
+symbol = symbols[0]  # From find_symbol
 result = what_breaks(symbol)
-# Returns: {"references": [...], "total_count": 12, "note": "..."}
-# Note: Matches by name, may include unrelated symbols with same name
-```
-
-### Dependency Analysis
-```python
-# What does UserService.authenticate depend on?
-symbol = find_symbol("/path/to/project", "authenticate")[0]
-result = what_depends(symbol)
-# Returns: ["get_user", "verify_password", "logging", ...]
+# Returns: {"references": [...], "total_count": 12, 
+#          "note": "Found 12 potential references based on text search..."}
 ```
 
 
@@ -139,13 +150,13 @@ This structural approach provides clean, accurate results essential for reliable
 
 ## What Makes This Practical
 
-1. **Simple installation** - `pip install` handles dependencies
-2. **No configuration** - Works with default settings
-3. **Syntax-aware** - ast-grep matches code structure, not just text
-4. **Stateless** - No index to maintain
-5. **Based on tree-sitter** - Uses established parsing technology
+1. **Progressive Discovery** - Start with directories, add symbols only where needed
+2. **Smart Caching** - Symbol extraction cached per git commit for instant re-runs
+3. **Flexible Focus** - Use `focus_dirs` to zoom into specific parts of large codebases
+4. **Enhanced Symbols** - See function signatures and docstrings, not just names
+5. **Based on tree-sitter** - ast-grep provides accurate structural analysis
 
-XRAY provides basic code navigation tools that help AI assistants understand codebases better than plain text search.
+XRAY helps AI assistants avoid information overload while providing deep code intelligence where needed.
 
 ## Stateless Design
 
@@ -154,10 +165,9 @@ XRAY performs on-demand structural analysis using ast-grep. There's no database 
 ## Getting Started
 
 1. **Install**: See [`getting_started.md`](getting_started.md) or [`GETTING_STARTED_UV.md`](GETTING_STARTED_UV.md) for modern installation
-2. **View project structure**: `build_index("/path/to/project")`
-3. **Search symbols**: `find_symbol("/path/to/project", "UserService")`
-4. **Impact analysis**: Find symbol first, then `what_breaks(symbol)`
-5. **Explore dependencies**: Find symbol first, then `what_depends(symbol)`
+2. **Map the terrain**: `explore_repo("/path/to/project")`
+3. **Find your target**: `find_symbol("/path/to/project", "UserService")`
+4. **Assess impact**: `what_breaks(symbol)`
 
 ## The XRAY Philosophy
 

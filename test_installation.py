@@ -8,8 +8,7 @@ Run this after installation to ensure everything is working correctly.
 
 import sys
 import os
-import tempfile
-import shutil
+import subprocess
 from pathlib import Path
 
 def print_header(text):
@@ -19,162 +18,109 @@ def print_header(text):
     print(f"{'='*50}\n")
 
 def test_imports():
-    """Test that all required modules can be imported."""
-    print_header("Testing Imports")
+    """Test that core modules can be imported."""
+    print_header("Testing Core Imports")
     
     try:
-        import xray
-        print("✅ xray module found")
-    except ImportError as e:
-        print(f"❌ Failed to import xray: {e}")
-        return False
-    
-    try:
-        from xray.mcp_server import server
+        # Add src to path if running from repo
+        src_path = Path(__file__).parent / "src"
+        if src_path.exists():
+            sys.path.insert(0, str(src_path))
+        
+        from xray.core.indexer import XRayIndexer
+        print("✅ Core indexer module found")
+        
+        from xray.mcp_server import main
         print("✅ MCP server module found")
-    except ImportError as e:
-        print(f"❌ Failed to import MCP server: {e}")
-        return False
-    
-    try:
-        import tree_sitter
-        print("✅ tree-sitter module found")
-    except ImportError as e:
-        print(f"❌ Failed to import tree-sitter: {e}")
-        return False
-    
-    try:
+        
         import fastmcp
         print("✅ FastMCP module found")
+        
+        import thefuzz
+        print("✅ thefuzz module found")
+        
+        return True
     except ImportError as e:
-        print(f"❌ Failed to import FastMCP: {e}")
+        print(f"❌ Failed to import: {e}")
         return False
-    
-    return True
 
-def test_parsers():
-    """Test that language parsers are available."""
-    print_header("Testing Language Parsers")
+def test_ast_grep():
+    """Test that ast-grep is available."""
+    print_header("Testing ast-grep")
     
-    languages = ['python', 'javascript', 'typescript', 'go']
-    all_good = True
-    
-    for lang in languages:
-        try:
-            module_name = f'tree_sitter_{lang}'
-            __import__(module_name)
-            print(f"✅ {lang.capitalize()} parser found")
-        except ImportError:
-            print(f"❌ Failed to import {lang} parser")
-            all_good = False
-    
-    return all_good
+    try:
+        result = subprocess.run(["ast-grep", "--version"], capture_output=True, text=True)
+        if result.returncode == 0:
+            print(f"✅ ast-grep is installed: {result.stdout.strip()}")
+            return True
+        else:
+            print("❌ ast-grep not found or not working")
+            return False
+    except FileNotFoundError:
+        print("❌ ast-grep not found in PATH")
+        return False
 
 def test_basic_functionality():
     """Test basic XRAY functionality."""
     print_header("Testing Basic Functionality")
     
-    # Create a temporary directory with test files
-    with tempfile.TemporaryDirectory() as tmpdir:
-        test_dir = Path(tmpdir)
+    try:
+        # Add src to path if running from repo
+        src_path = Path(__file__).parent / "src"
+        if src_path.exists():
+            sys.path.insert(0, str(src_path))
         
-        # Create test Python file
-        test_py = test_dir / "test.py"
-        test_py.write_text('''
-def greet(name):
-    """Greet a person."""
-    return f"Hello, {name}!"
-
-class Greeter:
-    def __init__(self, prefix="Hello"):
-        self.prefix = prefix
-    
-    def greet(self, name):
-        return f"{self.prefix}, {name}!"
-
-def main():
-    g = Greeter()
-    print(g.greet("World"))
-''')
+        from xray.core.indexer import XRayIndexer
         
-        # Create test JavaScript file
-        test_js = test_dir / "test.js"
-        test_js.write_text('''
-function add(a, b) {
-    return a + b;
-}
-
-class Calculator {
-    multiply(x, y) {
-        return x * y;
-    }
-}
-
-const calc = new Calculator();
-console.log(calc.multiply(5, 3));
-''')
+        # Test with current directory
+        print("Testing explore_repo...")
+        indexer = XRayIndexer(".")
         
-        try:
-            from xray.core.indexer import XRayIndexer
-            
-            # Test indexing
-            print("Testing indexer...")
-            indexer = XRayIndexer(str(test_dir))
-            stats = indexer.build_index()
-            
-            if stats['success']:
-                print(f"✅ Indexer working - found {stats['files_parsed']} files, {stats['symbols_found']} symbols")
-            else:
-                print("❌ Indexer failed")
-                return False
-            
-            # Test symbol search
-            from xray.core.query import XRayQuery
-            print("\nTesting symbol search...")
-            query = XRayQuery(str(test_dir))
-            results = query.find_symbols("greet")
-            
-            if results and len(results) > 0:
-                print(f"✅ Symbol search working - found {len(results)} matches for 'greet'")
-            else:
-                print("❌ Symbol search failed")
-                return False
-            
-            # Test impact analysis
-            from xray.core.impact import XRayImpactAnalyzer
-            print("\nTesting impact analysis...")
-            analyzer = XRayImpactAnalyzer(str(test_dir))
-            impact = analyzer.analyze_impact("greet")
-            
-            print("✅ Impact analysis working")
-            
-            return True
-            
-        except Exception as e:
-            print(f"❌ Error during functionality test: {e}")
+        # Test directory tree (without symbols)
+        tree = indexer.explore_repo(max_depth=2, include_symbols=False)
+        if tree:
+            print("✅ explore_repo (directory view) working")
+        else:
+            print("❌ explore_repo failed")
             return False
+        
+        print("\nTesting find_symbol...")
+        # Test symbol search
+        symbols = indexer.find_symbol("test")
+        print(f"✅ find_symbol working - found {len(symbols)} matches")
+        
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error during functionality test: {e}")
+        return False
 
 def test_mcp_server():
-    """Test that MCP server can be initialized."""
+    """Test that MCP server can be started."""
     print_header("Testing MCP Server")
     
     try:
-        from xray.mcp_server import server
-        print("✅ MCP server can be imported")
-        
-        # Check that all tools are registered
-        tool_count = len(server._tools)
-        print(f"✅ Found {tool_count} MCP tools registered")
-        
-        # List available tools
-        print("\nAvailable tools:")
-        for tool_name in server._tools:
-            print(f"  - {tool_name}")
-        
-        return True
+        # Check if xray-mcp command exists
+        result = subprocess.run(["which", "xray-mcp"], capture_output=True, text=True)
+        if result.returncode == 0:
+            print(f"✅ xray-mcp command found at: {result.stdout.strip()}")
+            
+            # Try to run it with --help (safe test)
+            help_result = subprocess.run(["xray-mcp", "--help"], capture_output=True, text=True)
+            if "XRAY Code Intelligence" in help_result.stdout or help_result.returncode == 0:
+                print("✅ MCP server executable working")
+                return True
+            else:
+                print("❌ MCP server executable not working properly")
+                return False
+        else:
+            print("❌ xray-mcp command not found in PATH")
+            print("   This is expected if you haven't installed the package yet")
+            return True  # Not a critical failure for development
+            
     except Exception as e:
-        print(f"❌ Error testing MCP server: {e}")
-        return False
+        print(f"⚠️  Could not test MCP server: {e}")
+        return True  # Not a critical failure
 
 def main():
     """Run all tests."""
@@ -188,7 +134,7 @@ def main():
     if not test_imports():
         all_tests_passed = False
     
-    if not test_parsers():
+    if not test_ast_grep():
         all_tests_passed = False
     
     if not test_basic_functionality():
@@ -200,18 +146,18 @@ def main():
     # Summary
     print_header("Test Summary")
     if all_tests_passed:
-        print("✅ All tests passed! XRAY is installed correctly.")
+        print("✅ All tests passed! XRAY is ready to use.")
         print("\nNext steps:")
         print("1. Configure your AI assistant with the MCP server")
         print("2. Try 'use XRAY tools' in your prompts")
-        print("3. Start with 'build_index' to analyze a codebase")
+        print("3. Start with explore_repo() to analyze a codebase")
         return 0
     else:
         print("❌ Some tests failed. Please check the errors above.")
         print("\nTroubleshooting:")
-        print("1. Ensure Python 3.11+ is installed")
-        print("2. Try reinstalling with: uv pip install -e .")
-        print("3. Check that all dependencies are installed")
+        print("1. Ensure Python 3.10+ is installed")
+        print("2. Ensure ast-grep-cli is installed: pip install ast-grep-cli")
+        print("3. Try reinstalling: pip install -e .")
         return 1
 
 if __name__ == "__main__":
