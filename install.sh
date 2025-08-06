@@ -5,6 +5,17 @@
 
 set -e
 
+# Check if XRAY is already installed and on the PATH
+if command -v xray-mcp &>/dev/null; then
+    echo -e "${GREEN}✓${NC} XRAY is already installed."
+    # Optionally, ask to reinstall
+    read -p "Do you want to reinstall? (y/N) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        exit 0
+    fi
+fi
+
 echo "🚀 Installing XRAY MCP Server with uv..."
 
 # Colors for output
@@ -14,20 +25,23 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Check if Python 3.10+ is available
-if command -v python3 &> /dev/null; then
-    PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
-    PYTHON_MAJOR=$(echo $PYTHON_VERSION | cut -d. -f1)
-    PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d. -f2)
-    
-    if [ "$PYTHON_MAJOR" -eq 3 ] && [ "$PYTHON_MINOR" -ge 10 ]; then
-        echo -e "${GREEN}✓${NC} Found Python $PYTHON_VERSION"
-    else
-        echo -e "${RED}❌${NC} Python $PYTHON_VERSION found, but 3.10+ is required"
-        exit 1
-    fi
+if command -v python3.11 &>/dev/null; then
+    PYTHON_CMD="python3.11"
+elif command -v python3 &>/dev/null; then
+    PYTHON_CMD="python3"
 else
-    echo -e "${RED}❌${NC} Python 3.10+ is required but not found."
-    echo "Please install Python 3.10+ and try again."
+    echo -e "${RED}❌${NC} Python 3 is not installed."
+    exit 1
+fi
+
+PYTHON_VERSION=$($PYTHON_CMD -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+PYTHON_MAJOR=$(echo $PYTHON_VERSION | cut -d. -f1)
+PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d. -f2)
+
+if [ "$PYTHON_MAJOR" -eq 3 ] && [ "$PYTHON_MINOR" -ge 10 ]; then
+    echo -e "${GREEN}✓${NC} Found Python $PYTHON_VERSION"
+else
+    echo -e "${RED}❌${NC} Python $PYTHON_VERSION found, but 3.10+ is required"
     exit 1
 fi
 
@@ -45,7 +59,7 @@ if ! command -v uv &> /dev/null; then
         curl -LsSf https://astral.sh/uv/install.sh | sh
         
         # Add to PATH for current session
-        export PATH="$HOME/.cargo/bin:$PATH"
+        export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
         
         # Verify installation
         if command -v uv &> /dev/null; then
@@ -116,7 +130,7 @@ fi
 # Run verification test
 echo -e "${YELLOW}🧪${NC} Running installation test..."
 cd "$INSTALL_DIR"
-if python3 test_installation.py; then
+if $PYTHON_CMD test_installation.py; then
     echo -e "${GREEN}✓${NC} All tests passed!"
 else
     echo -e "${YELLOW}⚠${NC} Some tests failed, but installation completed"
