@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # XRAY MCP Server Installation Script (uv version)
-# Usage: curl -fsSL https://raw.githubusercontent.com/srijanshukla18/xray/main/install_uv.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/srijanshukla18/xray/main/install.sh | bash
 
 set -e
 

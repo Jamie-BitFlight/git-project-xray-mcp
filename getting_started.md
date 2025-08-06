@@ -1,6 +1,6 @@
 # Getting Started with XRAY - Modern Installation with uv
 
-XRAY is a zero-dependency code intelligence system that enhances AI assistants' understanding of codebases. This guide shows how to install and use XRAY with the modern `uv` package manager.
+XRAY is a minimal-dependency code intelligence system that enhances AI assistants' understanding of codebases. This guide shows how to install and use XRAY with the modern `uv` package manager.
 
 ## Prerequisites
 
@@ -22,7 +22,15 @@ pip install uv
 
 ## Installation Options
 
-### Option 1: Quick Try with uvx (Recommended for Testing)
+### Option 1: Automated Install (Easiest)
+
+For the quickest setup, use the one-line installer from the `README.md`. This will handle everything for you.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/srijanshukla18/xray/main/install.sh | bash
+```
+
+### Option 2: Quick Try with uvx (Recommended for Testing)
 
 Run XRAY directly without installation using `uvx`:
 
@@ -35,7 +43,7 @@ cd xray
 uvx --from . xray-mcp
 ```
 
-### Option 2: Install as a Tool (Recommended for Regular Use)
+### Option 3: Install as a Tool (Recommended for Regular Use)
 
 Install XRAY as a persistent tool:
 
@@ -51,7 +59,7 @@ uv tool install .
 xray-mcp
 ```
 
-### Option 3: Development Installation
+### Option 4: Development Installation
 
 For contributing or modifying XRAY:
 
@@ -71,23 +79,38 @@ uv pip install -e .
 python -m xray.mcp_server
 ```
 
-### Option 4: Direct from GitHub (Coming Soon)
-
-Once published to PyPI:
-
-```bash
-# Install directly
-uv tool install xray
-
-# Or run without installation
-uvx xray
-```
-
 ## Configure Your AI Assistant
 
 After installation, configure your AI assistant to use XRAY:
 
-### Claude CLI (Claude Code)
+### Using the MCP Config Generator (Recommended)
+
+For easier configuration, use the `mcp-config-generator.py` script located in the XRAY repository. This script can generate the correct JSON configuration for various AI assistants and installation methods.
+
+To use it:
+
+1.  Navigate to the XRAY repository root:
+    ```bash
+    cd /path/to/xray
+    ```
+2.  Run the script with your desired tool and installation method. For example, to get the configuration for Claude Desktop with an installed `xray-mcp` script:
+    ```bash
+    python mcp-config-generator.py claude installed_script
+    ```
+    Or for VS Code with a local Python installation:
+    ```bash
+    python mcp-config-generator.py vscode local_python
+    ```
+    The script will print the JSON configuration and instructions on where to add it.
+
+    Available tools: `cursor`, `claude`, `vscode`
+    Available methods: `local_python`, `docker`, `source`, `installed_script` (method availability varies by tool)
+
+### Manual Configuration (Advanced)
+
+If you prefer to configure manually, here are examples for common AI assistants:
+
+#### Claude CLI (Claude Code)
 
 For Claude CLI users, simply run:
 
@@ -101,7 +124,7 @@ Then verify it's connected:
 claude mcp list | grep xray
 ```
 
-### Claude Desktop
+#### Claude Desktop
 
 Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
 
@@ -128,7 +151,7 @@ Or if installed as a tool:
 }
 ```
 
-### Cursor
+#### Cursor
 
 Settings → Cursor Settings → MCP → Add new global MCP server:
 
@@ -142,14 +165,14 @@ Settings → Cursor Settings → MCP → Add new global MCP server:
 }
 ```
 
-## No External Dependencies Required!
+## Minimal Dependencies
 
-One of XRAY's best features is that it requires **zero external dependencies**. You don't need to install any language servers, binaries, or tools. XRAY uses:
+One of XRAY's best features is its minimal dependency profile. You don't need to install a suite of language servers. XRAY uses:
 
-- **Python**: Built-in `ast` module for 100% accurate parsing
-- **JavaScript/TypeScript/Go**: Intelligent pattern matching
+- **ast-grep**: A single, fast binary for structural code analysis.
+- **Python**: For the server and core logic.
 
-This means you can start using XRAY immediately after installation with no additional setup!
+This means you can start using XRAY immediately after installation with no complex setup!
 
 ## Verify Installation
 
@@ -288,15 +311,14 @@ export XRAY_DEBUG=1
 
 3. **Read the documentation**: Check out the [README](README.md) for detailed examples and API reference
 
-## Why XRAY Uses Pure Python
+## Why XRAY Uses a Minimal Dependency Approach
 
-XRAY v0.3.0+ uses a pure Python implementation that requires zero external dependencies:
+XRAY is designed for simplicity and ease of use. It relies on:
 
-- **No binaries to install** - No Semgrep, tree-sitter, or language servers needed
-- **Works immediately** - Just `pip install` and go
-- **Cross-platform** - Works on any system with Python 3.10+
-- **High recall approach** - Finds all potential symbols, lets AI filter intelligently
-- **Pluggable architecture** - Can optionally add better parsers later if needed
+- **ast-grep**: A powerful and fast single-binary tool for code analysis.
+- **Python**: For its robust standard library and ease of scripting.
+
+This approach avoids the complexity of setting up and managing multiple language servers, while still providing accurate, structural code intelligence.
 
 ## Benefits of Using uv
 
