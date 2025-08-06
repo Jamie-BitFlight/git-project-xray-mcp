@@ -41,7 +41,7 @@ TIPS:
 """
 
 import os
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Union
 
 from fastmcp import FastMCP
 
@@ -77,10 +77,10 @@ def get_indexer(path: str) -> XRayIndexer:
 @mcp.tool
 def explore_repo(
     root_path: str, 
-    max_depth: Optional[int] = None,
-    include_symbols: bool = False,
+    max_depth: Optional[Union[int, str]] = None,
+    include_symbols: Union[bool, str] = False,
     focus_dirs: Optional[List[str]] = None,
-    max_symbols_per_file: int = 5
+    max_symbols_per_file: Union[int, str] = 5
 ) -> str:
     """
     🗺️ STEP 1: Map the codebase structure - start simple, then zoom in!
@@ -93,10 +93,10 @@ def explore_repo(
     INPUTS:
     - root_path: The ABSOLUTE path to the project (e.g., "/Users/john/myproject")
                  NOT relative paths like "./myproject" or "~/myproject"
-    - max_depth: How deep to traverse directories (None = unlimited)
-    - include_symbols: Show function/class signatures with docs (False = dirs only)
+    - max_depth: How deep to traverse directories (None = unlimited, accepts int or string)
+    - include_symbols: Show function/class signatures with docs (False = dirs only, accepts bool or string)
     - focus_dirs: List of top-level directories to focus on (e.g., ["src", "lib"])
-    - max_symbols_per_file: Max symbols to show per file when include_symbols=True
+    - max_symbols_per_file: Max symbols to show per file when include_symbols=True (accepts int or string)
     
     EXAMPLE 1 - Initial exploration (directory only):
     explore_repo("/Users/john/project")
@@ -134,6 +134,14 @@ def explore_repo(
     - If you see relevant files, use find_symbol() to locate specific functions
     """
     try:
+        # Convert string inputs to proper types (for LLMs that pass strings)
+        if max_depth is not None and isinstance(max_depth, str):
+            max_depth = int(max_depth)
+        if isinstance(max_symbols_per_file, str):
+            max_symbols_per_file = int(max_symbols_per_file)
+        if isinstance(include_symbols, str):
+            include_symbols = include_symbols.lower() in ('true', '1', 'yes')
+            
         indexer = get_indexer(root_path)
         tree = indexer.explore_repo(
             max_depth=max_depth,
