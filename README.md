@@ -29,9 +29,7 @@ XRAY provides three focused tools:
 - 🔍 **Find** (`find_symbol`) - Locate functions and classes with fuzzy search
 - 💥 **Impact** (`what_breaks`) - Find where a symbol is referenced
 
-## 🚀 Quick Install (30 seconds)
-
-See [`getting_started.md`](getting_started.md) for detailed installation instructions.
+## 🚀 Quick Install
 
 ### Modern Install with uv (Recommended)
 
