@@ -119,6 +119,12 @@ fi
 echo -e "${YELLOW}🔧${NC} Installing XRAY with uv..."
 uv tool install . --force
 
+# Add uv's bin directory to PATH for future sessions
+uv tool update-shell
+
+# Ensure the current shell can find the freshly installed binary
+export PATH="$HOME/.local/bin:$PATH"
+
 # Verify installation
 if command -v xray-mcp &> /dev/null; then
     echo -e "${GREEN}✓${NC} XRAY installed successfully!"
