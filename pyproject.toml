@@ -1,6 +1,10 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
 [project]
-name = "xray"
-version = "0.6.1"
+name = "git-project-xray-mcp"
+dynamic = ["version"]
 description = "XRAY: Progressive code intelligence for AI assistants - Map, Find, Impact"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -25,16 +29,18 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/srijanshukla18/xray"
-Repository = "https://github.com/srijanshukla18/xray"
-Issues = "https://github.com/srijanshukla18/xray/issues"
-
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools.packages.find]
-where = ["src"]
+Homepage = "https://github.com/Jamie-BitFlight/git-project-xray-mcp"
+Repository = "https://github.com/Jamie-BitFlight/git-project-xray-mcp"
+Issues = "https://github.com/Jamie-BitFlight/git-project-xray-mcp/issues"
 
 [project.scripts]
-xray-mcp = "xray.mcp_server:main"
+git-project-xray-mcp = "xray.mcp_server:main"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.targets.sdist]
+include = ["src/xray", "README.md", "pyproject.toml", "LICENSE"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/xray"]
