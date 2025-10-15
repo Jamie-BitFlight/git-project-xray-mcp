@@ -8,9 +8,11 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment:
+      name: pypi
     permissions:
       contents: write
-      packages: write
+      id-token: write
 
     steps:
       - name: Checkout code
@@ -39,8 +41,6 @@ jobs:
         if: steps.tag_version.outputs.new_tag
         run: uv build
 
-      - name: Publish to GitHub Packages
+      - name: Publish to PyPI
         if: steps.tag_version.outputs.new_tag
-        env:
-          UV_PUBLISH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: uv publish
