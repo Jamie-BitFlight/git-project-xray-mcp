@@ -44,6 +44,3 @@ include = ["src/xray", "README.md", "pyproject.toml", "LICENSE"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/xray"]
-
-[tool.uv]
-publish-url = "https://pypi.pkg.github.com/Jamie-BitFlight"
