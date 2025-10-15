@@ -38,7 +38,7 @@ XRAY provides three focused tools:
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Clone and install XRAY
-git clone https://github.com/srijanshukla18/xray.git
+git clone https://github.com/Jamie-BitFlight/git-project-xray-mcp.git
 cd xray
 uv tool install .
 ```
@@ -48,7 +48,7 @@ uv tool install .
 For the quickest setup, this script automates the `uv` installation process.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/srijanshukla18/xray/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Jamie-BitFlight/git-project-xray-mcp/main/install.sh | bash
 ```
 
 ### Generate Config
@@ -224,7 +224,7 @@ pip install uv
 For the quickest setup, use the one-line installer from the `README.md`. This will handle everything for you.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/srijanshukla18/xray/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Jamie-BitFlight/git-project-xray-mcp/main/install.sh | bash
 ```
 
 ### Option 2: Quick Try with uvx (Recommended for Testing)
@@ -233,11 +233,11 @@ Run XRAY directly without installation using `uvx`:
 
 ```bash
 # Clone the repository
-git clone https://github.com/srijanshukla18/xray.git
+git clone https://github.com/Jamie-BitFlight/git-project-xray-mcp.git
 cd xray
 
 # Run XRAY directly with uvx
-uvx --from . xray-mcp
+uvx --from . git-project-xray-mcp
 ```
 
 ### Option 3: Install as a Tool (Recommended for Regular Use)
@@ -246,14 +246,14 @@ Install XRAY as a persistent tool:
 
 ```bash
 # Clone and install
-git clone https://github.com/srijanshukla18/xray.git
+git clone https://github.com/Jamie-BitFlight/git-project-xray-mcp.git
 cd xray
 
 # Install with uv
 uv tool install .
 
-# Now you can run xray-mcp from anywhere
-xray-mcp
+# Now you can run git-project-xray-mcp from anywhere
+git-project-xray-mcp
 ```
 
 ### Option 4: Development Installation
@@ -262,7 +262,7 @@ For contributing or modifying XRAY:
 
 ```bash
 # Clone the repository
-git clone https://github.com/srijanshukla18/xray.git
+git clone https://github.com/Jamie-BitFlight/git-project-xray-mcp.git
 cd xray
 
 # Create and activate virtual environment with uv
@@ -290,7 +290,7 @@ To use it:
     ```bash
     cd /path/to/xray
     ```
-2.  Run the script with your desired tool and installation method. For example, to get the configuration for Claude Desktop with an installed `xray-mcp` script:
+2.  Run the script with your desired tool and installation method. For example, to get the configuration for Claude Desktop with an installed `git-project-xray-mcp` script:
     ```bash
     python mcp-config-generator.py claude installed_script
     ```
@@ -312,7 +312,7 @@ If you prefer to configure manually, here are examples for common AI assistants:
 For Claude CLI users, simply run:
 
 ```bash
-claude mcp add xray xray-mcp -s local
+claude mcp add xray git-project-xray-mcp -s local
 ```
 
 Then verify it's connected:
@@ -330,7 +330,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
   "mcpServers": {
     "xray": {
       "command": "uvx",
-      "args": ["--from", "/path/to/xray", "xray-mcp"]
+      "args": ["--from", "/path/to/xray", "git-project-xray-mcp"]
     }
   }
 }
@@ -342,7 +342,7 @@ Or if installed as a tool:
 {
   "mcpServers": {
     "xray": {
-      "command": "xray-mcp"
+      "command": "git-project-xray-mcp"
     }
   }
 }
@@ -356,7 +356,7 @@ Settings → Cursor Settings → MCP → Add new global MCP server:
 {
   "mcpServers": {
     "xray": {
-      "command": "xray-mcp"
+      "command": "git-project-xray-mcp"
     }
   }
 }
@@ -377,10 +377,10 @@ This means you can start using XRAY immediately after installation with no compl
 
 ```bash
 # If installed as tool
-xray-mcp --version
+git-project-xray-mcp --version
 
 # If using uvx
-uvx --from /path/to/xray xray-mcp --version
+uvx --from /path/to/xray git-project-xray-mcp --version
 ```
 
 ### 2. Test basic functionality
@@ -456,7 +456,7 @@ export PATH="$HOME/.cargo/bin:$PATH"
 On macOS/Linux, you might need to make the script executable:
 
 ```bash
-chmod +x ~/.local/bin/xray-mcp
+chmod +x ~/.local/bin/git-project-xray-mcp
 ```
 
 ### Python version issues
@@ -472,7 +472,7 @@ uv python install 3.10
 
 ### MCP connection issues
 
-1. Check XRAY is running: `xray-mcp --test`
+1. Check XRAY is running: `git-project-xray-mcp --test`
 2. Verify your MCP config JSON is valid
 3. Restart your AI assistant after config changes
 

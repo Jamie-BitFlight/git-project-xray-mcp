@@ -39,7 +39,7 @@ CONFIGS = {
         "installed_script": {
             "mcpServers": {
                 "xray": {
-                    "command": "xray-mcp"
+                    "command": "git-project-xray-mcp"
                 }
             }
         }
@@ -90,7 +90,7 @@ CONFIGS = {
                 "servers": {
                     "xray": {
                         "type": "stdio",
-                        "command": "xray-mcp"
+                        "command": "git-project-xray-mcp"
                     }
                 }
             }
