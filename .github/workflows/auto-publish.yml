@@ -1,9 +1,9 @@
-name: Auto Publish on Main
+name: Auto Publish on Tag
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - 'v*'
 
 jobs:
   publish:
@@ -20,27 +20,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Bump version and create tag
-        id: tag_version
-        uses: mathieudutour/github-tag-action@v6.2
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          default_bump: false
-
       - name: Install uv
-        if: steps.tag_version.outputs.new_tag
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
 
       - name: Set up Python
-        if: steps.tag_version.outputs.new_tag
         run: uv python install
 
       - name: Build package
-        if: steps.tag_version.outputs.new_tag
         run: uv build
 
       - name: Publish to PyPI
-        if: steps.tag_version.outputs.new_tag
         run: uv publish
