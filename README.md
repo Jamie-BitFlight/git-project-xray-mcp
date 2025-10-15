@@ -55,9 +55,9 @@ curl -fsSL https://raw.githubusercontent.com/Jamie-BitFlight/git-project-xray-mc
 
 ```bash
 # Get config for your tool
-python mcp-config-generator.py cursor local_python
-python mcp-config-generator.py claude docker  
-python mcp-config-generator.py vscode source
+uv run python mcp-config-generator.py cursor local_python
+uv run python mcp-config-generator.py claude docker
+uv run python mcp-config-generator.py vscode source
 ```
 
 ## Language Support
