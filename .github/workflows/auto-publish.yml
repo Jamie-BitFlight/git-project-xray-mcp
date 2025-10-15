@@ -1,9 +1,8 @@
-name: Auto Publish on Tag
+name: Auto Publish on Release
 
 on:
-  push:
-    tags:
-      - 'v*'
+  release:
+    types: [published]
 
 jobs:
   publish:
