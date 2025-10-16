@@ -37,17 +37,17 @@ uvx --from . git-project-xray-mcp
 
 **Note**: The package is published to PyPI and available for direct installation. For development, clone the repository and use `uv tool install .` from the project directory.
 
-### Running the MCP Server
+### Testing the MCP Server
+
+MCP servers are invoked by MCP clients (AI assistants), not run directly. For testing:
 
 ```bash
-# If installed as tool
-git-project-xray-mcp
+# Test with MCP Inspector
+npx @modelcontextprotocol/inspector --cli uvx --from . git-project-xray-mcp
 
-# If in development mode
-uv run python -m xray.mcp_server
-
-# Via uvx (no installation)
-uvx --from . git-project-xray-mcp
+# Or configure in your AI assistant's MCP settings to use:
+# - If installed as tool: git-project-xray-mcp
+# - If local development from repo root: uvx --from . git-project-xray-mcp
 ```
 
 ### Testing
@@ -68,13 +68,13 @@ Generate MCP configuration for different AI assistants:
 
 ```bash
 # For Claude Desktop
-uv run python mcp-config-generator.py claude docker
+uv run mcp-config-generator.py claude docker
 
 # For Cursor
-uv run python mcp-config-generator.py cursor local_python
+uv run mcp-config-generator.py cursor local_python
 
 # For VS Code
-uv run python mcp-config-generator.py vscode source
+uv run mcp-config-generator.py vscode source
 ```
 
 ### Building and Distribution
@@ -284,7 +284,7 @@ The `mcp-config-generator.py` script generates correct JSON configuration for:
 - Cursor (local_python)
 - VS Code (source)
 
-Run with: `uv run python mcp-config-generator.py <tool> <method>`
+Run with: `uv run mcp-config-generator.py <tool> <method>`
 
 ## Claude Code Sessions Integration
 
