@@ -42,8 +42,15 @@ uvx --from . git-project-xray-mcp
 MCP servers are invoked by MCP clients (AI assistants), not run directly. For testing:
 
 ```bash
-# Test with MCP Inspector
-npx @modelcontextprotocol/inspector --cli uvx --from . git-project-xray-mcp
+# Test with MCP Inspector - list available tools
+npx @modelcontextprotocol/inspector --cli uvx --from . git-project-xray-mcp --method tools/list
+
+# Test with MCP Inspector - call explore_repo
+npx @modelcontextprotocol/inspector --cli uvx --from . git-project-xray-mcp \
+  --method tools/call \
+  --tool-name explore_repo \
+  --tool-arg 'root_path=/tmp' \
+  --tool-arg 'max_depth=2'
 
 # Or configure in your AI assistant's MCP settings to use:
 # - If installed as tool: git-project-xray-mcp
