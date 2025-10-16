@@ -75,8 +75,10 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 # Install in editable mode
 uv pip install -e .
 
-# Run the server
-python -m xray.mcp_server
+# Test with MCP Inspector
+npx @modelcontextprotocol/inspector --cli uvx --from . git-project-xray-mcp
+
+# Or configure your AI assistant to use the local installation
 ```
 
 ## Configure Your AI Assistant
@@ -95,11 +97,11 @@ To use it:
     ```
 2.  Run the script with your desired tool and installation method. For example, to get the configuration for Claude Desktop with an installed `git-project-xray-mcp` script:
     ```bash
-    python mcp-config-generator.py claude installed_script
+    uv run mcp-config-generator.py claude installed_script
     ```
     Or for VS Code with a local Python installation:
     ```bash
-    python mcp-config-generator.py vscode local_python
+    uv run mcp-config-generator.py vscode local_python
     ```
     The script will print the JSON configuration and instructions on where to add it.
 

@@ -31,16 +31,30 @@ XRAY provides three focused tools:
 
 ## 🚀 Quick Install
 
-### Modern Install with uv (Recommended)
+### Install from PyPI (Easiest)
+
+```bash
+# Install directly from PyPI with pip
+pip install git-project-xray-mcp
+
+# Or with uv (faster)
+uv pip install git-project-xray-mcp
+
+# Then run
+git-project-xray-mcp
+```
+
+### Install with uv Tool (Recommended for MCP)
 
 ```bash
 # Install uv if you don't have it
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Clone and install XRAY
-git clone https://github.com/Jamie-BitFlight/git-project-xray-mcp.git
-cd xray
-uv tool install .
+# Install as a uv tool
+uv tool install git-project-xray-mcp
+
+# Then run from anywhere
+git-project-xray-mcp
 ```
 
 ### Automated Install with uv
@@ -49,6 +63,14 @@ For the quickest setup, this script automates the `uv` installation process.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Jamie-BitFlight/git-project-xray-mcp/main/install.sh | bash
+```
+
+### Install from Source (Development)
+
+```bash
+git clone https://github.com/Jamie-BitFlight/git-project-xray-mcp.git
+cd xray
+uv tool install .
 ```
 
 ### Generate Config
