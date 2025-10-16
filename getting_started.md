@@ -75,8 +75,15 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 # Install in editable mode
 uv pip install -e .
 
-# Test with MCP Inspector
-npx @modelcontextprotocol/inspector --cli uvx --from . git-project-xray-mcp
+# Test with MCP Inspector - list available tools
+npx @modelcontextprotocol/inspector --cli uvx --from . git-project-xray-mcp --method tools/list
+
+# Test with MCP Inspector - call a tool
+npx @modelcontextprotocol/inspector --cli uvx --from . git-project-xray-mcp \
+  --method tools/call \
+  --tool-name explore_repo \
+  --tool-arg 'root_path=/tmp' \
+  --tool-arg 'max_depth=2'
 
 # Or configure your AI assistant to use the local installation
 ```
