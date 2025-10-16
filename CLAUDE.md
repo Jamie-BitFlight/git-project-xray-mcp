@@ -17,10 +17,11 @@ XRAY is an MCP (Model Context Protocol) server that provides progressive code in
 ### Installation and Setup
 
 ```bash
-# Install from GitHub Packages (requires authentication)
-# First, configure uv with GitHub token:
-export UV_PUBLISH_TOKEN=ghp_your_token_here
-uv pip install --index-url https://pypi.pkg.github.com/Jamie-BitFlight git-project-xray-mcp
+# Install from PyPI (recommended for users)
+pip install git-project-xray-mcp
+
+# Or with uv (faster)
+uv pip install git-project-xray-mcp
 
 # Install as uv tool from source (recommended for development)
 uv tool install .
@@ -34,7 +35,7 @@ uv pip install -e .
 uvx --from . git-project-xray-mcp
 ```
 
-**Note**: Installing from GitHub Packages requires authentication with a GitHub personal access token, even for public packages. See GitHub's documentation on [authenticating with GitHub Packages](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-python-registry).
+**Note**: The package is published to PyPI and available for direct installation. For development, clone the repository and use `uv tool install .` from the project directory.
 
 ### Running the MCP Server
 
@@ -89,17 +90,26 @@ uv tool install .
 uv tool install --force .
 ```
 
-**Publishing to GitHub Packages**:
+**Publishing to PyPI**:
 
-The package is automatically published to GitHub Packages when a new GitHub release is created. The workflow:
+The package is automatically published to PyPI on every push to main via GitHub Actions. The consolidated workflow:
 
-1. Create and push a git tag: `git tag v0.7.0 && git push origin v0.7.0`
-2. Create a GitHub release from the tag
-3. GitHub Actions automatically builds and publishes to GitHub Packages
+1. Push a commit to main
+2. GitHub Actions automatically creates an annotated git tag (e.g., v0.2.4)
+3. Critical step: Fetches tags and checks out the new tag (enables hatch-vcs to read version)
+4. Builds the package with `uv build` (hatch-vcs automatically detects version from git tag)
+5. Publishes to PyPI using Trusted Publishing (id-token:write)
+6. Creates a GitHub Release with artifacts and changelog
 
-Version is managed automatically via `hatch-vcs` from git tags - no manual version updates needed in pyproject.toml.
+**Version Management**:
 
-See `.github/workflows/publish.yml` for the automated publishing workflow.
+Version is managed automatically via `hatch-vcs` from git tags - no manual version updates needed in pyproject.toml. The build system extracts the version from the git tag when the tag is checked out.
+
+**Key Implementation Detail**:
+
+The `git fetch --tags` and `git checkout ${{ steps.tag_version.outputs.new_tag }}` steps are critical. They ensure hatch-vcs can read the git tag and compute the correct version during the build. Without these steps, the build would fail.
+
+See `.github/workflows/auto-publish.yml` for the automated publishing workflow.
 
 ## Architecture
 
