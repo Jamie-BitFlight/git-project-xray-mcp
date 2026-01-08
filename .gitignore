@@ -6,6 +6,8 @@ uv.lock
 
 # Test artifacts
 .pytest_cache/
+htmlcov/
+.coverage
 
 # Node.js dependencies
 node_modules/
