@@ -205,10 +205,13 @@ Results formatted and returned
 
 ```python
 LANGUAGE_MAP = {
-    ".py": "python",      # Functions, classes, methods, async
-    ".js/.jsx/.mjs": "javascript",  # Functions, classes, arrows
-    ".ts/.tsx": "typescript",       # All JS + interfaces, types
-    ".go": "go",          # Functions, structs, interfaces
+    ".py": "python",       # Functions, classes, methods, async
+    ".js": "javascript",   # Functions, classes, arrows
+    ".jsx": "javascript",
+    ".mjs": "javascript",
+    ".ts": "typescript",   # All JS + interfaces, types
+    ".tsx": "typescript",
+    ".go": "go",           # Functions, structs, interfaces
 }
 ```
 
