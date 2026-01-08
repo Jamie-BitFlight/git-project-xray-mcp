@@ -28,14 +28,6 @@ dependencies = [
     "thefuzz>=0.20.0",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "pytest-cov>=4.0.0",
-    "ruff>=0.1.0",
-    "mypy>=1.0.0",
-]
-
 [project.urls]
 Homepage = "https://github.com/Jamie-BitFlight/git-project-xray-mcp"
 Repository = "https://github.com/Jamie-BitFlight/git-project-xray-mcp"
@@ -53,6 +45,14 @@ include = ["src/xray", "README.md", "pyproject.toml", "LICENSE"]
 [tool.hatch.build.targets.wheel]
 packages = ["src/xray"]
 
+[dependency-groups]
+dev = [
+    "mypy>=1.19.1",
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.14.10",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
@@ -62,9 +62,6 @@ addopts = [
     "-v",
     "--strict-markers",
     "--tb=short",
-    "--cov=xray",
-    "--cov-report=term-missing",
-    "--cov-report=html",
 ]
 
 [tool.ruff]
