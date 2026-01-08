@@ -1,8 +1,5 @@
 """Tests for the XRayIndexer class."""
 
-import tempfile
-from pathlib import Path
-
 import pytest
 
 from xray.core.indexer import DEFAULT_EXCLUSIONS, LANGUAGE_MAP, XRayIndexer

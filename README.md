@@ -530,6 +530,96 @@ export XRAY_DEBUG=1
 
 3. **Read the documentation**: Check out the [README](README.md) for detailed examples and API reference
 
+## Development
+
+### Setting Up Development Environment
+
+1. **Clone the repository**:
+```bash
+git clone https://github.com/Jamie-BitFlight/git-project-xray-mcp.git
+cd git-project-xray-mcp
+```
+
+2. **Install development dependencies**:
+```bash
+uv venv
+uv pip install -e ".[dev]"
+```
+
+This installs XRAY in editable mode along with:
+- `ruff` - Fast linter and formatter (replaces flake8, black, isort)
+- `mypy` - Static type checker
+- `pytest` - Testing framework
+- `pytest-cov` - Code coverage plugin
+
+### Running Tests
+
+```bash
+# Run all tests
+uv run pytest tests/
+
+# Run with coverage
+uv run pytest tests/ --cov=xray --cov-report=term-missing
+
+# Run specific test file
+uv run pytest tests/test_indexer.py -v
+```
+
+### Code Quality
+
+**Linting:**
+```bash
+# Check code with ruff
+uv run ruff check src/ tests/
+
+# Auto-fix issues
+uv run ruff check --fix src/ tests/
+```
+
+**Formatting:**
+```bash
+# Check formatting
+uv run ruff format --check src/ tests/
+
+# Format code
+uv run ruff format src/ tests/
+```
+
+**Type Checking:**
+```bash
+# Run mypy type checker
+uv run mypy src/
+```
+
+### Continuous Integration
+
+The project uses GitHub Actions for CI/CD:
+- **Linting**: Runs ruff to check code style
+- **Formatting**: Verifies code is properly formatted
+- **Type Checking**: Runs mypy for static type analysis
+- **Testing**: Executes pytest across Python 3.10, 3.11, 3.12
+- **Coverage**: Uploads coverage reports to Codecov
+
+CI runs automatically on:
+- Push to `main` or `develop` branches
+- Pull requests to `main` or `develop` branches
+
+### Project Structure
+
+```
+git-project-xray-mcp/
+├── src/xray/              # Main source code
+│   ├── mcp_server.py      # FastMCP server and tool definitions
+│   └── core/
+│       └── indexer.py     # Core indexing engine
+├── tests/                  # Test suite
+│   ├── test_indexer.py    # Tests for indexer
+│   └── test_mcp_server.py # Tests for MCP server
+├── .github/workflows/      # GitHub Actions CI
+│   └── ci.yml             # Linting and testing workflow
+└── pyproject.toml         # Project configuration
+```
+
 ## Why XRAY Uses a Minimal Dependency Approach
 
 XRAY is designed for simplicity and ease of use. It relies on:

@@ -109,7 +109,7 @@ def use_processor():
     def test_mcp_server_has_registered_functions(self):
         """Test that functions are registered in the mcp server."""
         # Check that _tool_manager has tools registered
-        assert hasattr(mcp, '_tool_manager')
+        assert hasattr(mcp, "_tool_manager")
         assert len(mcp._tool_manager._tools) > 0
 
         # Get tool names
@@ -117,4 +117,3 @@ def use_processor():
         assert "explore_repo" in tool_names
         assert "find_symbol" in tool_names
         assert "what_breaks" in tool_names
-
