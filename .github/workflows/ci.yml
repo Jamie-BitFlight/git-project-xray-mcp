@@ -15,10 +15,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6.0.1
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7.2.0
         with:
           enable-cache: true
 
@@ -42,7 +42,7 @@ jobs:
         run: uv run pytest tests/ -v --cov=xray --cov-report=term --cov-report=xml
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v5.5.2
         if: matrix.python-version == '3.12'
         with:
           file: ./coverage.xml
