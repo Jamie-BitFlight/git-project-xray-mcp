@@ -542,8 +542,7 @@ cd git-project-xray-mcp
 
 2. **Install development dependencies**:
 ```bash
-uv venv
-uv pip install -e ".[dev]"
+uv sync --extra dev
 ```
 
 This installs XRAY in editable mode along with:

@@ -15,10 +15,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
 
@@ -26,29 +26,23 @@ jobs:
         run: uv python install ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: |
-          uv venv
-          uv pip install -e ".[dev]"
+        run: uv sync --extra dev
 
       - name: Run ruff linter
-        run: |
-          uv run ruff check src/ tests/
+        run: uv run ruff check src/ tests/
 
       - name: Run ruff formatter check
-        run: |
-          uv run ruff format --check src/ tests/
+        run: uv run ruff format --check src/ tests/
 
       - name: Run mypy type checker
-        run: |
-          uv run mypy src/
+        run: uv run mypy src/
         continue-on-error: true  # Don't fail the build on type errors initially
 
       - name: Run pytest
-        run: |
-          uv run pytest tests/ -v --cov=xray --cov-report=term --cov-report=xml
+        run: uv run pytest tests/ -v --cov=xray --cov-report=term --cov-report=xml
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         if: matrix.python-version == '3.12'
         with:
           file: ./coverage.xml
