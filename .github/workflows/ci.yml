@@ -26,7 +26,7 @@ jobs:
         run: uv python install ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: uv sync --extra dev
+        run: uv sync
 
       - name: Run ruff linter
         run: uv run ruff check src/ tests/
@@ -36,10 +36,9 @@ jobs:
 
       - name: Run mypy type checker
         run: uv run mypy src/
-        continue-on-error: true  # Don't fail the build on type errors initially
 
       - name: Run pytest
-        run: uv run pytest tests/ -v --cov=xray --cov-report=term --cov-report=xml
+        run: uv run pytest tests/
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5.5.2

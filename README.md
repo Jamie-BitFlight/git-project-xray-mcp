@@ -542,7 +542,7 @@ cd git-project-xray-mcp
 
 2. **Install development dependencies**:
 ```bash
-uv sync --extra dev
+uv sync
 ```
 
 This installs XRAY in editable mode along with:
