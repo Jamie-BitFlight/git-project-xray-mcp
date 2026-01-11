@@ -8,6 +8,7 @@ uv.lock
 .pytest_cache/
 htmlcov/
 .coverage
+coverage.xml
 
 # Node.js dependencies
 node_modules/
