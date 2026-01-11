@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+.venv/
+venv/
+
+# Build output
+dist/
+build/
+*.egg-info/
+
+# Cache
+.mypy_cache/
+.pytest_cache/
+__pycache__/
+.ruff_cache/
+
+# Coverage
+htmlcov/
+.coverage
+coverage.xml
+
+# Lock files
+uv.lock
+package-lock.json
+
+# IDE
+.vscode/
+.idea/
+
+# Session data
+sessions/

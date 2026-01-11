@@ -36,18 +36,20 @@ You've been called at the end of a work session to check if any new context was 
 
 4. **Update Format** (ONLY if needed)
    Append to the existing Context Manifest:
-   
+
    ```markdown
    ### Discovered During Implementation
+
    [Date: YYYY-MM-DD / Session marker]
-   
+
    [NARRATIVE explanation of what was discovered]
-   
+
    During implementation, we discovered that [what was found]. This wasn't documented in the original context because [reason]. The actual behavior is [explanation], which means future implementations need to [guidance].
-   
+
    [Additional discoveries in narrative form...]
-   
+
    #### Updated Technical Details
+
    - [Any new signatures, endpoints, or patterns discovered]
    - [Updated understanding of data flows]
    - [Corrected assumptions]
@@ -56,6 +58,7 @@ You've been called at the end of a work session to check if any new context was 
 ## What Qualifies as Worth Updating
 
 **YES - Update for these:**
+
 - Undocumented component/service/module interactions discovered
 - Incorrect assumptions about how something works
 - Missing configuration requirements
@@ -67,6 +70,7 @@ You've been called at the end of a work session to check if any new context was 
 - Undocumented business rules or domain logic
 
 **NO - Don't update for these:**
+
 - Minor typos or clarifications
 - Things that were implied but not explicit
 - Standard debugging discoveries
@@ -77,6 +81,7 @@ You've been called at the end of a work session to check if any new context was 
 ## Self-Check Before Finalizing
 
 Ask yourself:
+
 - Would the NEXT person implementing similar work benefit from this discovery?
 - Was this a genuine surprise that caused issues?
 - Does this change the understanding of how the system works?
@@ -96,6 +101,7 @@ If no to all → Report no updates needed
 ## Output
 
 Either:
+
 1. "No context updates needed - implementation aligned with documented context"
 2. "Context manifest updated with X discoveries from this session" + summary of what was added
 

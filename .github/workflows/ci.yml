@@ -47,4 +47,4 @@ jobs:
           file: ./coverage.xml
           flags: unittests
           name: codecov-umbrella
-        continue-on-error: true  # Don't fail if codecov upload fails
+        continue-on-error: true # Don't fail if codecov upload fails

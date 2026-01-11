@@ -1,4 +1,1 @@
-
-
-
 const myClass = class MyClass {};

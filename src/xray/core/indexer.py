@@ -64,7 +64,9 @@ class XRayIndexer:
 
     def __init__(self, root_path: str):
         self.root_path = Path(root_path).resolve()
-        self._cache = {}
+        self._cache: dict[str, list[dict[str, str]]] = {}
+        self.commit_sha: str | None = None
+        self.cache_dir: Path | None = None
         self._init_cache()
 
     def _init_cache(self):
@@ -142,7 +144,7 @@ class XRayIndexer:
         gitignore_patterns = self._parse_gitignore()
 
         # Build the tree
-        tree_lines = []
+        tree_lines: list[str] = []
         self._build_tree_recursive_enhanced(
             self.root_path,
             tree_lines,
@@ -401,7 +403,7 @@ class XRayIndexer:
 
     def _extract_regex_symbols_enhanced(self, content: str, language: str) -> list[dict[str, str]]:
         """Extract symbols with signatures and comments for JS/TS/Go."""
-        symbols = []
+        symbols: list[dict[str, str]] = []
 
         # Language-specific patterns
         if language in ["javascript", "typescript"]:

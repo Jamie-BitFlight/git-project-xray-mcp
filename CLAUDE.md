@@ -138,6 +138,7 @@ xray/
 ### Key Components
 
 **mcp_server.py** (src/xray/mcp_server.py):
+
 - FastMCP server initialization
 - Three main tools: `explore_repo`, `find_symbol`, `what_breaks`
 - Indexer caching per repository path
@@ -145,6 +146,7 @@ xray/
 - Entry point: `main()` function
 
 **indexer.py** (src/xray/core/indexer.py):
+
 - `XRayIndexer` class: Core engine for all code analysis
 - Git-based caching: Uses commit SHA to cache symbol extraction
 - File tree generation with progressive symbol inclusion
@@ -179,6 +181,7 @@ Results formatted and returned
 ## Language Support
 
 Via ast-grep (tree-sitter based):
+
 - **Python** (.py): Functions, classes, methods, async functions
 - **JavaScript** (.js, .jsx, .mjs): Functions, classes, arrow functions
 - **TypeScript** (.ts, .tsx): All JS features + interfaces, type aliases
@@ -191,6 +194,7 @@ See `LANGUAGE_MAP` in indexer.py:28-36.
 ### Tool Parameter Handling
 
 LLMs may pass strings for all parameters. The codebase defensively converts:
+
 ```python
 # In explore_repo (mcp_server.py:137-143)
 if max_depth is not None and isinstance(max_depth, str):
@@ -204,6 +208,7 @@ Apply this pattern when adding new tool parameters.
 ### Path Normalization
 
 Always use absolute paths internally (mcp_server.py:57-66):
+
 ```python
 path = os.path.expanduser(path)  # Expand ~
 path = os.path.abspath(path)     # Make absolute
@@ -213,6 +218,7 @@ path = str(Path(path).resolve()) # Resolve symlinks
 ### Progressive Discovery Pattern
 
 The core workflow encourages starting simple, then zooming in:
+
 1. First call: Directories only (`include_symbols=False`)
 2. Zoom in: Focus on specific dirs with symbols (`focus_dirs=["src"]`, `include_symbols=True`)
 3. Find targets: Use `find_symbol()` for specific functions/classes
@@ -229,6 +235,7 @@ This prevents information overload for AI assistants working with large codebase
 ### Error Handling
 
 Functions return user-friendly error messages rather than raising exceptions:
+
 ```python
 try:
     # ... operation ...
@@ -243,10 +250,11 @@ This ensures MCP tools always return useful information to AI assistants.
 ### Exclusions
 
 Default exclusions defined in `DEFAULT_EXCLUSIONS` (indexer.py:16-25):
-- Standard directories: node_modules, venv, __pycache__, .git, etc.
+
+- Standard directories: node_modules, venv, **pycache**, .git, etc.
 - Build artifacts: build, dist, target
 - IDE files: .idea, .vscode
-- Compiled files: *.pyc, *.so, *.dll
+- Compiled files: _.pyc, _.so, \*.dll
 
 Gitignore patterns also respected via `_parse_gitignore()`.
 
@@ -261,6 +269,7 @@ Uses `thefuzz.fuzz.partial_ratio()` for fuzzy symbol search. Boosts score to 80 
 ### Reference Search Strategy
 
 `what_breaks()` prioritizes ripgrep if available, falls back to Python text search:
+
 1. Try ripgrep with `--json` output for speed
 2. On failure/not found, use Python's `rglob` + regex
 3. Always uses word boundary matching (`\b` in regex, `-w` in rg)
@@ -268,6 +277,7 @@ Uses `thefuzz.fuzz.partial_ratio()` for fuzzy symbol search. Boosts score to 80 
 ## Dependencies
 
 Minimal by design:
+
 - **fastmcp** (>=0.1.0): FastMCP framework for building MCP servers
 - **ast-grep-cli** (>=0.39.0): Tree-sitter powered structural search
 - **thefuzz** (>=0.20.0): Fuzzy string matching for symbol search
@@ -277,6 +287,7 @@ Python requirement: >=3.10
 ## Entry Points
 
 Defined in pyproject.toml:
+
 ```toml
 [project.scripts]
 git-project-xray-mcp = "xray.mcp_server:main"
@@ -287,6 +298,7 @@ The `git-project-xray-mcp` command calls `main()` in mcp_server.py, which starts
 ## Configuration Management
 
 The `mcp-config-generator.py` script generates correct JSON configuration for:
+
 - Claude Desktop (local_python, docker, installed_script)
 - Cursor (local_python)
 - VS Code (source)
@@ -300,6 +312,7 @@ This repository uses the cc-sessions framework. See `sessions/CLAUDE.sessions.md
 ## Future Development Notes
 
 When adding features:
+
 1. Maintain stateless design - no persistent state beyond git commit caching
 2. Follow progressive discovery pattern - start simple, add detail on demand
 3. Use ast-grep for structural analysis, not regex

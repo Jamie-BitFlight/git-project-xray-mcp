@@ -27,7 +27,13 @@
       "server_args": ["--stdio"],
       "install_check_command": ["npm", "--version"],
       "install_check_name": "npm",
-      "install_command": ["npm", "install", "-g", "typescript", "typescript-language-server"],
+      "install_command": [
+        "npm",
+        "install",
+        "-g",
+        "typescript",
+        "typescript-language-server"
+      ],
       "install_prompt": "To analyze JavaScript files, XRAY needs to install the TypeScript Language Server. This is a one-time setup.",
       "prerequisite_error": "npm is not installed. Please install Node.js (which includes npm) to enable JavaScript analysis support.",
       "installation_docs": "https://nodejs.org/",
@@ -46,7 +52,13 @@
       "server_args": ["--stdio"],
       "install_check_command": ["npm", "--version"],
       "install_check_name": "npm",
-      "install_command": ["npm", "install", "-g", "typescript", "typescript-language-server"],
+      "install_command": [
+        "npm",
+        "install",
+        "-g",
+        "typescript",
+        "typescript-language-server"
+      ],
       "install_prompt": "To analyze TypeScript files, XRAY needs to install the TypeScript Language Server. This is a one-time setup.",
       "prerequisite_error": "npm is not installed. Please install Node.js (which includes npm) to enable TypeScript analysis support.",
       "installation_docs": "https://nodejs.org/",
