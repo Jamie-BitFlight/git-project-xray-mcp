@@ -85,6 +85,7 @@ uv run python mcp-config-generator.py vscode source
 ## Language Support
 
 XRAY uses [ast-grep](https://ast-grep.github.io), a tree-sitter powered structural search tool, providing accurate parsing for:
+
 - **Python** - Functions, classes, methods, async functions
 - **JavaScript** - Functions, classes, arrow functions, imports
 - **TypeScript** - All JavaScript features plus interfaces, type aliases
@@ -95,6 +96,7 @@ ast-grep ensures structural accuracy - it understands code syntax, not just text
 ## The XRAY Workflow - Progressive Discovery
 
 ### 1. Map - Start Simple, Then Zoom In
+
 ```python
 # First: Get the big picture (directories only)
 tree = explore_repo("/path/to/project")
@@ -123,6 +125,7 @@ tree = explore_repo("/path/to/project", max_depth=2, include_symbols=True)
 ```
 
 ### 2. Find - Locate Specific Symbols
+
 ```python
 # Find symbols matching "authenticate" (fuzzy search)
 symbols = find_symbol("/path/to/project", "authenticate")
@@ -130,14 +133,14 @@ symbols = find_symbol("/path/to/project", "authenticate")
 ```
 
 ### 3. Impact - See What Would Break
+
 ```python
 # Find where authenticate_user is used
 symbol = symbols[0]  # From find_symbol
 result = what_breaks(symbol)
-# Returns: {"references": [...], "total_count": 12, 
+# Returns: {"references": [...], "total_count": 12,
 #          "note": "Found 12 potential references based on text search..."}
 ```
-
 
 ## Architecture
 
@@ -313,13 +316,17 @@ To use it:
     cd /path/to/xray
     ```
 2.  Run the script with your desired tool and installation method. For example, to get the configuration for Claude Desktop with an installed `git-project-xray-mcp` script:
+
     ```bash
     python mcp-config-generator.py claude installed_script
     ```
+
     Or for VS Code with a local Python installation:
+
     ```bash
     python mcp-config-generator.py vscode local_python
     ```
+
     The script will print the JSON configuration and instructions on where to add it.
 
     Available tools: `cursor`, `claude`, `vscode`
@@ -525,10 +532,107 @@ export XRAY_DEBUG=1
    - `find_symbol` - Fuzzy search for functions, classes, and methods
    - `what_breaks` - Find what code depends on a symbol (reverse dependencies)
    - `what_depends` - Find what a symbol depends on (calls and imports)
-   
+
    Note: Results may include matches from comments or strings. The AI assistant will intelligently filter based on context.
 
 3. **Read the documentation**: Check out the [README](README.md) for detailed examples and API reference
+
+## Development
+
+### Setting Up Development Environment
+
+1. **Clone the repository**:
+
+```bash
+git clone https://github.com/Jamie-BitFlight/git-project-xray-mcp.git
+cd git-project-xray-mcp
+```
+
+2. **Install development dependencies**:
+
+```bash
+uv sync
+```
+
+This installs XRAY in editable mode along with:
+
+- `ruff` - Fast linter and formatter (replaces flake8, black, isort)
+- `mypy` - Static type checker
+- `pytest` - Testing framework
+- `pytest-cov` - Code coverage plugin
+
+### Running Tests
+
+```bash
+# Run all tests
+uv run pytest tests/
+
+# Run with coverage
+uv run pytest tests/ --cov=xray --cov-report=term-missing
+
+# Run specific test file
+uv run pytest tests/test_indexer.py -v
+```
+
+### Code Quality
+
+**Linting:**
+
+```bash
+# Check code with ruff
+uv run ruff check src/ tests/
+
+# Auto-fix issues
+uv run ruff check --fix src/ tests/
+```
+
+**Formatting:**
+
+```bash
+# Check formatting
+uv run ruff format --check src/ tests/
+
+# Format code
+uv run ruff format src/ tests/
+```
+
+**Type Checking:**
+
+```bash
+# Run mypy type checker
+uv run mypy src/
+```
+
+### Continuous Integration
+
+The project uses GitHub Actions for CI/CD:
+
+- **Linting**: Runs ruff to check code style
+- **Formatting**: Verifies code is properly formatted
+- **Type Checking**: Runs mypy for static type analysis
+- **Testing**: Executes pytest across Python 3.10, 3.11, 3.12
+- **Coverage**: Uploads coverage reports to Codecov
+
+CI runs automatically on:
+
+- Push to `main` or `develop` branches
+- Pull requests to `main` or `develop` branches
+
+### Project Structure
+
+```
+git-project-xray-mcp/
+├── src/xray/              # Main source code
+│   ├── mcp_server.py      # FastMCP server and tool definitions
+│   └── core/
+│       └── indexer.py     # Core indexing engine
+├── tests/                  # Test suite
+│   ├── test_indexer.py    # Tests for indexer
+│   └── test_mcp_server.py # Tests for MCP server
+├── .github/workflows/      # GitHub Actions CI
+│   └── ci.yml             # Linting and testing workflow
+└── pyproject.toml         # Project configuration
+```
 
 ## Why XRAY Uses a Minimal Dependency Approach
 

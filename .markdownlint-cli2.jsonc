@@ -1,0 +1,18 @@
+{
+  "config": {
+    "MD013": {
+      "line_length": 120,
+      "code_blocks": false,
+      "tables": false
+    },
+    "MD033": false,
+    "MD041": false
+  },
+  "globs": [
+    "**/*.md",
+    "!node_modules/**",
+    "!.venv/**",
+    "!.claude/**",
+    "!sessions/**"
+  ]
+}

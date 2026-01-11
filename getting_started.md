@@ -103,13 +103,17 @@ To use it:
     cd /path/to/xray
     ```
 2.  Run the script with your desired tool and installation method. For example, to get the configuration for Claude Desktop with an installed `git-project-xray-mcp` script:
+
     ```bash
     uv run mcp-config-generator.py claude installed_script
     ```
+
     Or for VS Code with a local Python installation:
+
     ```bash
     uv run mcp-config-generator.py vscode local_python
     ```
+
     The script will print the JSON configuration and instructions on where to add it.
 
     Available tools: `cursor`, `claude`, `vscode`
@@ -315,7 +319,7 @@ export XRAY_DEBUG=1
    - `find_symbol` - Fuzzy search for functions, classes, and methods
    - `what_breaks` - Find what code depends on a symbol (reverse dependencies)
    - `what_depends` - Find what a symbol depends on (calls and imports)
-   
+
    Note: Results may include matches from comments or strings. The AI assistant will intelligently filter based on context.
 
 3. **Read the documentation**: Check out the [README](README.md) for detailed examples and API reference
