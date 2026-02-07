@@ -49,11 +49,19 @@
             "command": "node $CLAUDE_PROJECT_DIR/sessions/hooks/session_start.js"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/gsd-check-update.js"
+          }
+        ]
       }
     ]
   },
   "statusLine": {
     "type": "command",
-    "command": "node $CLAUDE_PROJECT_DIR/sessions/statusline.js"
+    "command": "node $CLAUDE_PROJECT_DIR/sessions/gsd-statusline.js"
   }
 }
