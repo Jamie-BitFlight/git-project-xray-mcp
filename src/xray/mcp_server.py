@@ -279,7 +279,7 @@ def what_breaks(exact_symbol: dict[str, Any]) -> dict[str, Any]:
         return {"error": f"Error finding references: {str(e)}"}
 
 
-def main():
+def main() -> None:
     """Main entry point for the XRAY MCP server."""
     mcp.run()
 

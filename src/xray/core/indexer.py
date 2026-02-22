@@ -69,7 +69,7 @@ class XRayIndexer:
         self.cache_dir: Path | None = None
         self._init_cache()
 
-    def _init_cache(self):
+    def _init_cache(self) -> None:
         """Initialize cache based on git commit SHA."""
         try:
             # Get current git commit SHA
@@ -88,7 +88,7 @@ class XRayIndexer:
             self.commit_sha = None
             self.cache_dir = None
 
-    def _load_cache(self):
+    def _load_cache(self) -> None:
         """Load cache from disk if available."""
         if not self.cache_dir:
             return
@@ -101,7 +101,7 @@ class XRayIndexer:
             except Exception:
                 self._cache = {}
 
-    def _save_cache(self):
+    def _save_cache(self) -> None:
         """Save cache to disk."""
         if not self.cache_dir:
             return
@@ -225,7 +225,7 @@ class XRayIndexer:
         focus_dirs: list[str] | None,
         max_symbols_per_file: int,
         is_last: bool = False,
-    ):
+    ) -> None:
         """Recursively build the tree representation with enhanced features."""
         if self._should_exclude(path, gitignore_patterns):
             return
