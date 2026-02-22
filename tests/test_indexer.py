@@ -352,15 +352,11 @@ class TestXRayIndexerCaching:
         subprocess.run(
             ["git", "config", "user.email", "test@test.com"], cwd=tmp_path, capture_output=True
         )
-        subprocess.run(
-            ["git", "config", "user.name", "Test"], cwd=tmp_path, capture_output=True
-        )
+        subprocess.run(["git", "config", "user.name", "Test"], cwd=tmp_path, capture_output=True)
         py_file = tmp_path / "mod.py"
         py_file.write_text("def f(): pass\n")
         subprocess.run(["git", "add", "."], cwd=tmp_path, capture_output=True)
-        subprocess.run(
-            ["git", "commit", "-m", "init"], cwd=tmp_path, capture_output=True
-        )
+        subprocess.run(["git", "commit", "-m", "init"], cwd=tmp_path, capture_output=True)
 
         indexer = XRayIndexer(str(tmp_path))
         assert indexer.cache_dir is not None
@@ -391,9 +387,7 @@ class TestXRayIndexerWhatBreaks:
         """Create a repo where one file references a symbol in another."""
         (tmp_path / "src").mkdir()
 
-        (tmp_path / "src" / "lib.py").write_text(
-            "def target_function():\n    return 42\n"
-        )
+        (tmp_path / "src" / "lib.py").write_text("def target_function():\n    return 42\n")
         (tmp_path / "src" / "app.py").write_text(
             "from lib import target_function\n\nresult = target_function()\n"
         )
